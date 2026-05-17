@@ -6,12 +6,14 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and thi
 
 ---
 
-## [Unreleased]
+## [1.0.3], 2026-05-17
 
 ### Added
 
 - **Import-existing-config option on the first-run wizard.** A new callout on step 1 (Welcome) lets users with a previously-exported JSON config restore their settings directly, skipping the rest of the wizard. The import flow reuses the same strict validator as the settings panel's Backup &amp; restore section (rejects unknown keys, type mismatches, files without the `_meta.source` marker). A `window.confirm` shows the parsed settings summary before applying. If the imported config has `AUTO_BOOK` enabled, the user's OK click on the summary serves as informed acknowledgement and the auto-book consent flag is written, analogous to the in-wizard consent modal on step 5.
 - Use case: setting up the script on a new browser, device, or browser profile after exporting from a previous install. Previously the user had to walk through all 5 wizard steps and then import via the settings panel; now they can do it in one click on the welcome screen.
+
+[1.0.3]: https://github.com/alchemycharlie/dvsa-earlier-slot-watcher/releases/tag/v1.0.3
 
 ---
 
