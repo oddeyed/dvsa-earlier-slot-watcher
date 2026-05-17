@@ -4625,10 +4625,16 @@
 
         const panel = document.createElement('div');
         panel.className = 'dvsa-p';
+        // Flex column so the footer (Export/Copy/Clear/Close) stays anchored to
+        // the bottom of the visible panel regardless of how many history rows
+        // exist. The table region inside buildHistoryHTML takes flex:1 and gets
+        // its own scroll; header and footer use flex-shrink:0 to hold their
+        // natural sizes.
         panel.style.cssText = [
             'background:#fff','color:#0b0c0c','width:820px','max-width:96vw',
-            'max-height:92vh','overflow-y:auto','border-radius:8px',
-            'box-shadow:0 10px 30px rgba(0,0,0,.45)','padding:28px','box-sizing:border-box'
+            'max-height:92vh','border-radius:8px',
+            'box-shadow:0 10px 30px rgba(0,0,0,.45)','padding:28px','box-sizing:border-box',
+            'display:flex','flex-direction:column','overflow:hidden'
         ].join(';');
 
         overlay.appendChild(panel);
@@ -4709,7 +4715,7 @@
                 </div>
             `;
             statsBlock = `
-                <div class="dvsa-kpi-grid">
+                <div class="dvsa-kpi-grid" style="flex-shrink:0;">
                     ${tile('Scans',     cycles.count,        '', '')}
                     ${tile('Matches',   matches.length,      'is-match', '')}
                     ${tile('Nearby',    nearby.length,       'is-nearby', '')}
@@ -4724,7 +4730,7 @@
                 </div>
             `;
         } else {
-            statsBlock = '<p style="color:#505a5f;margin:0 0 16px;padding:12px;background:#f3f2f1;border-radius:4px;">No scans recorded yet. The script logs each refresh cycle when it completes.</p>';
+            statsBlock = '<p style="color:#505a5f;margin:0 0 16px;padding:12px;background:#f3f2f1;border-radius:4px;flex-shrink:0;">No scans recorded yet. The script logs each refresh cycle when it completes.</p>';
         }
 
         const filterBtn = (key, label, count) => {
@@ -4734,7 +4740,7 @@
         const groupBtnLabel = _historyGrouped ? '≡ Show all sightings' : '≡ Group duplicates';
         const groupBtnHtml = `<button id="dvsa-hist-group" type="button" style="padding:6px 12px;background:${_historyGrouped ? '#0b0c0c' : '#fff'};color:${_historyGrouped ? '#fff' : '#0b0c0c'};border:1px solid #b1b4b6;border-radius:4px;cursor:pointer;font:600 12px system-ui,sans-serif;" title="Toggle between one row per sighting and one row per unique (date, centre) combo">${groupBtnLabel}</button>`;
         const filterRow = `
-            <div style="display:flex;gap:6px;margin:0 0 12px;align-items:center;flex-wrap:wrap;">
+            <div style="display:flex;gap:6px;margin:0 0 12px;align-items:center;flex-wrap:wrap;flex-shrink:0;">
                 <span style="color:#505a5f;font-size:12px;margin-right:4px;">Filter:</span>
                 ${filterBtn('all',     'All',     findings.length)}
                 ${filterBtn('match',   'Matches', matches.length)}
@@ -4812,10 +4818,10 @@
         const hasAnything = hasData || cycles.count > 0;
 
         return `
-            <h2 style="margin:0 0 16px;font-size:20px;">Scan history</h2>
+            <h2 style="margin:0 0 16px;font-size:20px;flex-shrink:0;">Scan history</h2>
             ${statsBlock}
             ${filterRow}
-            <div style="border:1px solid #b1b4b6;border-radius:4px;overflow:hidden;margin:0 0 16px;max-height:420px;overflow-y:auto;">
+            <div style="border:1px solid #b1b4b6;border-radius:4px;overflow:hidden;margin:0 0 16px;flex:1 1 auto;min-height:120px;overflow-y:auto;">
                 <table style="width:100%;border-collapse:collapse;">
                     <thead>
                         <tr style="background:#f3f2f1;font-size:11px;text-transform:uppercase;color:#505a5f;letter-spacing:0.3px;">
@@ -4828,7 +4834,7 @@
                     <tbody>${rowsHtml}</tbody>
                 </table>
             </div>
-            <div style="display:flex;gap:8px;justify-content:space-between;align-items:center;flex-wrap:wrap;">
+            <div style="display:flex;gap:8px;justify-content:space-between;align-items:center;flex-wrap:wrap;flex-shrink:0;padding-top:12px;border-top:1px solid #f3f2f1;">
                 <div style="display:flex;gap:8px;">
                     <button id="dvsa-hist-export" type="button" style="padding:8px 12px;background:#fff;border:1px solid #b1b4b6;border-radius:4px;cursor:${hasData ? 'pointer' : 'not-allowed'};opacity:${hasData ? '1' : '0.5'};font:14px system-ui,sans-serif;" ${hasData ? '' : 'disabled'}>Export CSV</button>
                     <button id="dvsa-hist-copy" type="button" style="padding:8px 12px;background:#fff;border:1px solid #b1b4b6;border-radius:4px;cursor:${hasData ? 'pointer' : 'not-allowed'};opacity:${hasData ? '1' : '0.5'};font:14px system-ui,sans-serif;" ${hasData ? '' : 'disabled'}>Copy to clipboard</button>
