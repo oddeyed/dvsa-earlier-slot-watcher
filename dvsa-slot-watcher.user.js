@@ -134,8 +134,11 @@
     };
 
     // ---- Findings log (persisted to localStorage for verification & history) ----
+    // STORAGE_MAX caps the array length. At ~180 bytes per entry, 400 entries
+    // is ~72KB of localStorage, well within the per-origin 5-10MB limit. Older
+    // entries are evicted FIFO once the cap is hit.
     const STORAGE_KEY = 'dvsa-watcher-findings';
-    const STORAGE_MAX = 200;
+    const STORAGE_MAX = 400;
     const CYCLES_KEY  = 'dvsa-watcher-cycles';
 
     function recordCycle() {
