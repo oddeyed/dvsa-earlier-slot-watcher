@@ -1615,6 +1615,15 @@
             }
             .dvsa-p .dvsa-footer-left,
             .dvsa-p .dvsa-footer-right { display: flex; gap: 8px; flex-wrap: wrap; }
+            /* Slightly tighter than the default .dvsa-btn so all five footer
+               buttons (Reset, View history, Test alert, Cancel, Save) fit on a
+               single row inside the 720px panel. Falls back to wrap on very
+               narrow viewports via the .dvsa-footer flex-wrap above. */
+            .dvsa-p .dvsa-footer button.dvsa-btn {
+                padding: 6px 11px;
+                font-size: 12px;
+                white-space: nowrap;
+            }
 
             .dvsa-p .dvsa-divider {
                 height: 1px; background: #f3f2f1; margin: 16px 0 14px; border: 0;
