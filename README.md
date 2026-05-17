@@ -1,6 +1,8 @@
 # DVSA Earlier Slot Watcher
 
-> A Tampermonkey userscript for UK learner drivers with an **existing DVSA practical driving test booking**. Watches the "Change your test" page for an earlier cancellation slot at the same test centre, alerts the moment one appears in your target date window, and can optionally auto-reschedule up to the final confirmation page. **Does not book new tests**, you must already have a booking.
+A Tampermonkey userscript for UK learner drivers with an **existing DVSA practical driving test booking**. Watches the "Change your test" page for earlier cancellation slots at your test centre, alerts when one appears in your accepted date window, and can optionally auto-reschedule up to DVSA's final confirmation step.
+
+**Does not book new tests** — you must already have a confirmed booking.
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Version](https://img.shields.io/github/v/tag/alchemycharlie/dvsa-earlier-slot-watcher?label=version&color=brightgreen)](CHANGELOG.md)
@@ -11,109 +13,21 @@
   <img src="docs/screenshots/hero.png" alt="The DVSA Earlier Slot Watcher running on a DVSA booking page, showing the floating status pill and settings gear in the bottom-right corner" width="900">
 </p>
 
----
-
 > [!WARNING]
-> ### Important: read before installing
->
-> This is a **free, unofficial, community-built tool**. It is **not affiliated with, endorsed by, or connected to the DVSA, gov.uk, or the UK Government** in any way.
->
-> By installing or using this script, you accept that:
->
-> - It comes with **no warranty whatsoever**, "as is", "as available", no guarantees of any kind.
-> - The author **accepts no liability** for missed test slots, lost bookings, DVSA account issues, incorrect bookings, missed alerts, or any other consequence of using it.
-> - **You are solely responsible** for complying with the DVSA's terms and conditions and for verifying every booking detail before clicking Confirm.
-> - The full terms are in **[DISCLAIMER.md](DISCLAIMER.md)**, please read them before installing.
->
-> If you do not accept these terms, **do not install or use this script**.
-
----
-
-> [!IMPORTANT]
-> ### For existing bookings only, this is not a fresh-booking tool
->
-> This script helps people with an **existing, paid, confirmed DVSA practical driving test booking** find an earlier cancellation slot at the same test centre and **reschedule** their booking to that slot.
->
-> **What the tool exists to do**: remove the manual effort of repeatedly refreshing the DVSA "Change your test" page yourself, and notify you the moment a slot you'd accept appears.
->
-> **What the tool does not, and will not, do**:
->
-> - Book a new test from scratch.
-> - Skip the DVSA application or payment flow.
-> - Help anyone without a booking get one.
-> - Snap up newly-released slots before they reach DVSA's public booking page.
-> - **Circumvent, evade, or interfere with DVSA's security measures.** When DVSA presents a CAPTCHA, the script pauses and hands control back to you. When DVSA returns a rate-limit response (Error 15), the script stops and waits for the block to clear. When DVSA changes its page structure, the script halts safely rather than guessing. Every interaction the script performs is one a logged-in human could perform manually through the same site. The script's value is in saving your time, not in giving you any technical advantage over another human user.
->
-> Technically: the script only operates on `driverpracticaltest.dvsa.gov.uk/manage*` and `/login*`, the "Change your test" management flow. It paces its requests at a default 7-12 minute interval to remain comparable to a person checking the page periodically. It never touches the fresh-booking application URL.
->
-> If you don't already have a test booked, you'll need to go through DVSA's normal booking process first. Then come back here.
-
----
-
-> [!CAUTION]
-> ### Permitted and prohibited use
->
-> This script is for **individual personal use only**, by people in the UK who hold their own DVSA practical driving test booking and wish to reschedule it to an earlier date.
->
-> **Permitted**: using the script on your own device, with your own DVSA login, for your own booking.
->
-> **Not permitted**:
->
-> - Use on behalf of any other person (friends, family, pupils, clients).
-> - Use across multiple DVSA accounts.
-> - Commercial use of any kind. Driving instructors and schools must not run the script on behalf of pupils.
-> - Use for malicious or unlawful purposes, or anything that breaches DVSA terms, DVLA terms, the Computer Misuse Act 1990, or any other applicable UK law.
-> - Wrapping the script inside headless browsers, automation frameworks, or unattended server-side automation.
-> - Use outside the UK.
->
-> The script is, and will remain, free for genuine individual users. It must not be copied, modified, redistributed, or forked for financial gain. Forks intended to break, weaponise, or maliciously alter the script's behaviour are not endorsed by the author.
->
-> Full Acceptable Use Policy: [DISCLAIMER §3](DISCLAIMER.md#3-acceptable-use-policy). Distribution and fork rules: [DISCLAIMER §4](DISCLAIMER.md#4-distribution-modification-and-forks). Project philosophy: [DISCLAIMER §5](DISCLAIMER.md#5-project-philosophy).
-
----
-
-## Quick start
-
-Skip ahead to [Install](#install) for the full walkthrough. The 60-second version:
-
-1. **Install [Tampermonkey](https://www.tampermonkey.net/)** for your browser.
-2. **Click this link** to install the script: [Install DVSA Earlier Slot Watcher](https://raw.githubusercontent.com/alchemycharlie/dvsa-earlier-slot-watcher/main/dvsa-slot-watcher.user.js)
-3. **Open your DVSA booking page** ([driverpracticaltest.dvsa.gov.uk/manage](https://driverpracticaltest.dvsa.gov.uk/manage)) and log in.
-4. **A setup wizard appears.** Walk through it, pick your date range, test centre, instructor dates. Save.
-5. **Leave the tab open** in a corner of your screen. The script handles the rest.
-
-Press `S` at any time to open settings, `H` for history, `P` to pause.
-
----
-
-## Why this exists
-
-I was caring for my elderly mother who lives around three hours away by public transport, and my assigned driving-test date was months away. Passing the test was an absolute priority, driving would mean the difference between a full-day round-trip and being able to actually be there when she needs me. DVSA only allows two reschedules per booking and I had one left, so I needed to find an earlier cancellation. The problem: cancellations get snapped up within seconds.
-
-I built this script because I wanted something that:
-- Watched the booking page for me, around my schedule, without me having to refresh it
-- Filtered out dates my instructor couldn't do
-- Alerted me loudly when a slot appeared so I could finish the booking before someone else did
-- Stayed honest, no scraping data, no analytics, no "premium tier", no external servers
-
-It's saved as a Tampermonkey userscript so anyone with a browser can run it. No accounts, no installs beyond the userscript manager itself, and nothing about your booking ever leaves your machine.
-
-If it helps you the way it helped me, [a coffee](https://buymeacoffee.com/charlie.martina) is appreciated but never expected.
+> Unofficial community tool. No affiliation with DVSA, gov.uk, or the UK Government. No warranty, no liability for missed slots or account issues. By installing you accept the terms in **[DISCLAIMER.md](DISCLAIMER.md)**. Full legal and permitted-use details: [Before you install](#before-you-install).
 
 ---
 
 ## What it does
 
-For users with an existing DVSA test booking who want to reschedule to an earlier date:
+For users with an existing DVSA test booking who want to reschedule earlier:
 
-- **Monitors your DVSA "Change your test" page** on a randomised 5–60 minute cycle (default 7–12 min)
-- **Filters by date window**, weekends, and your instructor's unavailable dates
-- **Alerts you four ways at once** when a match appears: red banner, browser notification, audio chime, and a tab-title flash
-- **Auto-books (opt-in)** through to DVSA's "Confirm changes" page, the final commit stays manual so you can verify the slot
-- **Logs every finding** to local browser storage so you can review later or export to CSV
-- **Speaks Spring WebFlow**, handles DVSA's session-expired flow, optional auto-login if you provide credentials, and operates at a default 7-12 minute cycle to remain comparable to a person checking the page periodically
-- **Self-heals** discovered test centre names into the settings dropdown
-- **Stays 100% local**, no analytics, no telemetry, no external network calls beyond DVSA itself
+- **Monitors** the "Change your test" page on a randomised 7-12 minute cycle (configurable 5-60).
+- **Filters** by date window, weekends, and your instructor's unavailable dates.
+- **Alerts** four ways at once: red banner, browser notification, audio chime, tab-title flash.
+- **Auto-books (opt-in)** through to DVSA's "Confirm changes" page — the final commit stays manual.
+- **Logs every finding** to local browser storage. Filter, group, export to CSV.
+- **Stays 100% local** — no analytics, no telemetry, no external network calls beyond DVSA itself.
 
 <p align="center">
   <img src="docs/screenshots/settings-panel.png" alt="The settings panel showing the Health card, Date window, monitoring preview, test centre dropdown, refresh interval, and other configuration options" width="720">
@@ -123,60 +37,65 @@ For users with an existing DVSA test booking who want to reschedule to an earlie
 
 ---
 
+## Quick start
+
+The 60-second version. Full walkthrough in [Install](#install).
+
+1. Install [Tampermonkey](https://www.tampermonkey.net/) for your browser.
+2. Click to install the script: **[DVSA Earlier Slot Watcher](https://raw.githubusercontent.com/alchemycharlie/dvsa-earlier-slot-watcher/main/dvsa-slot-watcher.user.js)**
+3. **Chromium browsers only:** enable Tampermonkey's "Allow User Scripts" toggle ([why](#chromium-allow-user-scripts)).
+4. Open [your DVSA booking page](https://driverpracticaltest.dvsa.gov.uk/manage) and log in.
+5. The setup wizard appears. Walk through it. Save. Leave the tab open.
+
+Press `S` for settings, `H` for history, `P` to pause.
+
+---
+
 ## Install
 
 ### 1. Install Tampermonkey
 
-[Tampermonkey](https://www.tampermonkey.net/) is the userscript manager. It runs as a browser extension. Install the version for your browser:
+[Tampermonkey](https://www.tampermonkey.net/) is the userscript manager (browser extension).
 
 - [Chrome / Brave / Edge](https://chromewebstore.google.com/detail/tampermonkey/dhdgffkkebhmkfjojejmpbldmpobfkfo)
 - [Firefox](https://addons.mozilla.org/firefox/addon/tampermonkey/)
 - [Safari (paid)](https://apps.apple.com/app/tampermonkey/id1482490089)
 
-### 2. Chrome / Edge / Brave / other Chromium browsers: enable "Allow User Scripts"
+### 2. Chromium browsers: enable "Allow User Scripts" <a id="chromium-allow-user-scripts"></a>
 
 > [!IMPORTANT]
-> Since Chrome's Manifest V3 enforcement tightened, Chromium-based browsers require you to **explicitly opt in to running userscripts**. Without this step, Tampermonkey can install the script but won't actually run it on DVSA pages, so nothing will happen and you'll wonder why.
+> Since Chrome's Manifest V3 enforcement tightened, Chromium browsers require you to explicitly opt in to running userscripts. Without this step, Tampermonkey can install the script but won't run it on DVSA pages.
 
-1. In your browser, go to the extensions page:
-   - Chrome: `chrome://extensions/`
-   - Edge: `edge://extensions/`
-   - Brave: `brave://extensions/`
-   - Opera / other Chromium: equivalent `<browser>://extensions/`
-2. In the **top-right corner** of that page, toggle **Developer mode** ON.
-3. Find **Tampermonkey** in the list and click its **Details** button.
-4. Scroll down and toggle **Allow User Scripts** ON.
+1. Open your browser's extensions page (`chrome://extensions/`, `edge://extensions/`, `brave://extensions/`, etc.).
+2. Toggle **Developer mode** ON (top-right).
+3. Click **Details** on the Tampermonkey card.
+4. Toggle **Allow User Scripts** ON.
 
-Official Tampermonkey guidance for this step: <https://www.tampermonkey.net/faq.php?q=Q209>.
+Official Tampermonkey guidance: <https://www.tampermonkey.net/faq.php?q=Q209>.
 
-**Firefox users**: skip this step entirely. Tampermonkey on Firefox runs userscripts without needing additional permissions.
+**Firefox users:** skip this step.
 
 ### 3. Install the script
 
-Click this link in a browser with Tampermonkey installed:
+Click in a browser with Tampermonkey installed: **[Install DVSA Earlier Slot Watcher](https://raw.githubusercontent.com/alchemycharlie/dvsa-earlier-slot-watcher/main/dvsa-slot-watcher.user.js)**
 
-**[Install DVSA Earlier Slot Watcher](https://raw.githubusercontent.com/alchemycharlie/dvsa-earlier-slot-watcher/main/dvsa-slot-watcher.user.js)**
-
-Tampermonkey will open its install screen, click **Install**.
-
-Once installed, it'll auto-update from this same URL whenever a new version is released.
+Tampermonkey opens its install screen. Click **Install**. It'll auto-update from the same URL on future releases.
 
 ### 4. Configure
 
-1. Open your DVSA test booking change page: <https://driverpracticaltest.dvsa.gov.uk/manage>
-2. Log in to find your current test
-3. **First-time users**: a 5-step setup wizard appears automatically. Walk through it. **Returning users**: click the **gear icon** in the bottom-right to reopen the full settings panel any time.
-4. Fill in (via wizard or panel):
-   - **Date window**, earliest + latest dates you'd accept
-   - **Test centre**, pick from the searchable dropdown (~330 UK centres bundled)
-   - **Search term**, your postcode or centre name (whatever finds your centre in DVSA's search results)
-   - **Instructor unavailable dates**, paste or pick the dates your instructor can't do
-   - **Auto-book** (optional), opt in if you trust the script to click through automatically
-   - **Auto-login** (optional), paste your licence number + booking ref to recover from session expiry without manual intervention
-5. Click **Save and reload** (or **Finish setup** in the wizard)
-6. Leave the tab open in a corner of your screen, the script does the rest
+1. Open <https://driverpracticaltest.dvsa.gov.uk/manage> and log in.
+2. **First-time:** the 5-step setup wizard appears. **Returning:** click the gear icon (bottom-right) any time.
+3. Fill in (wizard or panel):
+   - Date window (earliest + latest acceptable dates)
+   - Test centre (searchable dropdown, ~330 UK centres bundled)
+   - Search term (postcode or centre name DVSA recognises)
+   - Instructor unavailable dates (optional, paste or pick)
+   - Auto-book (optional, off by default)
+   - Auto-login (optional, paste licence + booking ref for session recovery)
+4. Click **Save and reload** / **Finish setup**.
+5. Leave the tab open. The script does the rest.
 
-<p align="center"><strong>What the first-run setup wizard looks like</strong></p>
+<p align="center"><strong>The first-run setup wizard</strong></p>
 
 <table align="center">
   <tr>
@@ -185,7 +104,7 @@ Once installed, it'll auto-update from this same URL whenever a new version is r
       <br><em>Step 1: Welcome &amp; disclaimer</em>
     </td>
     <td align="center" valign="top" width="33%">
-      <img src="docs/screenshots/wizard-test-by-range.png" alt="Wizard step 2: Date window picker with live preview showing how many dates would alert" width="280">
+      <img src="docs/screenshots/wizard-test-by-range.png" alt="Wizard step 2: Date window picker with live preview" width="280">
       <br><em>Step 2: Date window with live preview</em>
     </td>
     <td align="center" valign="top" width="33%">
@@ -197,273 +116,274 @@ Once installed, it'll auto-update from this same URL whenever a new version is r
 
 <p align="center"><em>Steps 4 and 5 cover instructor dates and final options (refresh interval, auto-book opt-in, auto-login). Both are skippable.</em></p>
 
-> By completing installation and saving any configuration, you confirm that you have read and accepted the terms in [DISCLAIMER.md](DISCLAIMER.md).
-
 <p align="center">
-  <img src="docs/screenshots/monitoring-preview.png" alt="The 'What you're monitoring' card showing a live breakdown: 47 dates would alert, 72 total in range, with a coloured stacked bar showing alertable, weekend-excluded, and instructor-blocked portions" width="600">
+  <img src="docs/screenshots/monitoring-preview.png" alt="The 'What you're monitoring' card showing a live breakdown of how many dates would alert vs total in range" width="600">
   <br>
-  <em>The settings panel's "What you're monitoring" card updates live as you adjust the date window, weekend toggle, and instructor dates.</em>
+  <em>"What you're monitoring" updates live as you tune the date window, weekend toggle, and instructor dates.</em>
 </p>
 
 <p align="center">
-  <img src="docs/screenshots/status-pill.png" alt="The floating status pill in the bottom-right of the screen showing scanning state with a live countdown to the next refresh cycle" width="380">
+  <img src="docs/screenshots/status-pill.png" alt="The floating status pill in the bottom-right showing the scanning state with a live countdown" width="380">
   <br>
-  <em>Always know what the script is doing. The status pill shows the current state and a countdown to the next refresh.</em>
+  <em>Status pill: current state + countdown to next refresh.</em>
 </p>
 
 ---
 
 ## Troubleshooting
 
-### "I installed the script but nothing happens on the DVSA page" (Chromium browsers)
+### Installed but nothing happens on DVSA pages (Chromium browsers)
 
-Almost always the **Allow User Scripts** toggle in Tampermonkey's extension settings hasn't been enabled. Chrome, Edge, Brave, Opera, and other Chromium-based browsers require this since Manifest V3 enforcement tightened.
+The **Allow User Scripts** toggle isn't on. See [step 2 of Install](#2-chromium-browsers-enable-allow-user-scripts).
 
-Fix:
+Then reload the DVSA tab — the floating pill and gear should appear bottom-right.
 
-1. Go to your browser's extensions page (`chrome://extensions/`, `edge://extensions/`, etc.)
-2. Toggle **Developer mode** ON (top-right of that page)
-3. Click **Details** on the Tampermonkey card
-4. Toggle **Allow User Scripts** ON
+Firefox users: this isn't required. Check the script is enabled in Tampermonkey's dashboard.
 
-Then reload your DVSA tab and the floating pill + gear icon should appear in the bottom-right corner.
+### Notifications aren't firing
 
-Tampermonkey's own page on this: <https://www.tampermonkey.net/faq.php?q=Q209>.
+Most likely:
 
-Firefox users: this isn't required, you have a different issue. Check that the script is enabled in Tampermonkey's dashboard.
+1. **Permission denied** — Settings → Health card → Notifications. If "Denied", re-grant in your browser's site settings (padlock icon).
+2. **Focus/DND mode** — macOS Focus, Windows Focus Assist, and Do Not Disturb modes swallow notifications. Whitelist the browser or disable.
+3. **Notifications unsupported** — locked-down browsers or in-app webviews. Use a desktop browser.
 
-### "Notifications aren't firing"
+### Audio chime isn't playing
 
-Most likely causes, in order of likelihood:
+Web Audio needs a user gesture before it can play. Click anywhere on the page once. Health card should show **Audio: Ready**. Use **Test alert** to verify.
 
-1. **Permission denied.** Click the gear icon → check the Health card → look at the Notifications status. If it says *"Denied"*, you'll need to re-grant permission in your browser's site settings (the padlock icon next to the URL).
-2. **Tab is in the background and the OS is suppressing.** macOS Focus, Windows Focus Assist, and Do Not Disturb modes will silently swallow notifications. Disable them or whitelist your browser.
-3. **Notifications API unsupported.** Some heavily-locked-down browsers or in-app browser views don't support the API at all. Use Chrome/Firefox/Edge on a desktop OS.
+### Error 15 / temporary block
 
-### "Audio chime isn't playing"
+DVSA returns "Error 15" when too many requests arrive from your IP. The script recognises this, pauses, and surfaces an intervention banner. Usually clears within 1-2 hours.
 
-The Web Audio API requires a user gesture before audio can play. After installing the script:
+Common causes:
 
-1. Click anywhere on the page once (literally anywhere, a blank part of the page is fine)
-2. The Health card should now show **Audio: Ready** ✓
-3. Use the **Test alert** button in the settings panel to verify the chime fires
+- Refresh interval set faster than the 7-12 min default.
+- Script running in multiple tabs/browsers/devices simultaneously.
+- Other traffic from your IP also hitting DVSA.
 
-If audio is still silent: check your browser's site-level audio permission, system volume, and any "auto-mute background tabs" settings.
-
-### "Error 15" / Temporary block from DVSA
-
-DVSA returns an "Error 15" response when its security layer determines that too many requests are arriving from your IP in a short period. This is a standard protection of DVSA's booking system. The temporary block usually clears within **1-2 hours**. The script recognises this response and pauses, surfacing an intervention banner so you can wait it out, exactly as you would if you'd encountered the same response browsing manually.
-
-The script paces its requests at a default 7-12 minute interval specifically so that it falls comfortably within DVSA's expected use patterns. If you've received an Error 15 response, it usually means one of the following:
-
-- The refresh interval has been set faster than the default. Restore it to the default (or higher).
-- The script is running in multiple tabs, browsers, or devices simultaneously. Stop all but one.
-- Other traffic from your IP (another tool, another household member browsing DVSA) is adding to the request count.
-
-The script does not, and will not, attempt to work around an Error 15 response. Wait for the block to clear naturally and the script's next refresh cycle will resume monitoring.
+Wait for the block to clear, then resume. Full rationale for how the script behaves here: [docs/SECURITY-POSTURE.md](docs/SECURITY-POSTURE.md#error-15--temporary-rate-limit-block).
 
 <p align="center">
-  <img src="docs/screenshots/error-15-lockout-detection.png" alt="The red intervention banner that appears when the script recognises DVSA's Error 15 temporary-block response" width="720">
-  <br>
-  <em>The Error 15 intervention banner. The script pauses and waits; it doesn't try to retry around the block.</em>
+  <img src="docs/screenshots/error-15-lockout-detection.png" alt="The red intervention banner that appears when the script recognises DVSA's Error 15 response" width="720">
 </p>
 
-### "CAPTCHA appeared" intervention
+### CAPTCHA appeared
 
-DVSA's site occasionally presents a CAPTCHA challenge as part of its standard security measures. The script recognises this state and pauses, surfacing an intervention banner so you can complete the challenge yourself, exactly as you would if you were browsing the page manually. The script does not, and will not, attempt to solve, click through, or work around CAPTCHAs in any way. Solving them is the user's responsibility, and the script is designed to step back and respect that.
+DVSA occasionally presents a CAPTCHA. The script recognises it, pauses, and hands control back. Complete it yourself; the script resumes on the next cycle. If CAPTCHAs appear every cycle, increase the refresh interval to 15-30 min and wait a few hours.
 
-What to do:
-
-1. Complete the CAPTCHA on the DVSA page yourself.
-2. Once you're back on the booking pages, the script's next refresh cycle will resume monitoring.
-3. If CAPTCHAs keep appearing every cycle, your IP may be under heavier scrutiny than usual. Increase the refresh interval to 15-30 min and wait a few hours before resuming.
+Full rationale for how the script behaves here: [docs/SECURITY-POSTURE.md](docs/SECURITY-POSTURE.md#captcha-challenges).
 
 <p align="center">
-  <img src="docs/screenshots/captcha-detection.png" alt="The intervention banner that appears when the script recognises a CAPTCHA challenge on the DVSA page" width="720">
-  <br>
-  <em>CAPTCHA-recognition intervention. Solving CAPTCHAs is the user's job; the script's job is to recognise the state and hand control back.</em>
+  <img src="docs/screenshots/captcha-detection.png" alt="The intervention banner when the script recognises a CAPTCHA challenge" width="720">
 </p>
 
-### "Layout broken" intervention alert
+### "Layout broken" intervention
 
-DVSA changed their page structure (CSS classes, IDs, or markup). The script bails safely instead of clicking the wrong thing.
+DVSA changed page structure. The script bails rather than clicking the wrong thing.
 
-1. **First**: check if a script update is available, open Tampermonkey's dashboard, click **Check for updates**
-2. If you're on the latest version and the issue persists, [file an issue](https://github.com/alchemycharlie/dvsa-earlier-slot-watcher/issues/new/choose), include the body ID DVSA is now using and which selector broke
+1. Check for a script update: Tampermonkey dashboard → **Check for updates**.
+2. If you're on the latest version, [file an issue](https://github.com/alchemycharlie/dvsa-earlier-slot-watcher/issues/new/choose) with the body ID DVSA is now using and which selector broke.
 
 ### "Test centre mismatch" intervention
 
-The H1 on the DVSA calendar page doesn't contain the centre name you configured. Either:
+The H1 on the DVSA calendar page doesn't match your configured centre. Either:
 
-- You typed the centre name slightly differently, open settings, check the dropdown for the exact official wording
-- DVSA renamed the centre, pick from the dropdown again (the new name will be auto-discovered after one cycle if not bundled)
-- You navigated to the wrong centre via DVSA's own search
+- You typed the name slightly differently — open settings, pick from the dropdown.
+- DVSA renamed the centre — pick from the dropdown again.
+- You navigated to the wrong centre via DVSA's own search.
 
 <p align="center">
-  <img src="docs/screenshots/centre-mismatch.png" alt="The intervention banner shown when the centre name on the DVSA page doesn't match the one configured in the script" width="720">
-  <br>
-  <em>Centre-mismatch intervention. Scanning pauses so the script doesn't accidentally book at the wrong test centre.</em>
+  <img src="docs/screenshots/centre-mismatch.png" alt="The intervention banner shown when the centre on the DVSA page doesn't match the configured one" width="720">
 </p>
 
-### "I can't see the floating cluster (status pill + gear)"
+### Can't see the floating cluster
 
-The cluster is in `position: fixed` at the bottom-right. Possible blockers:
+Possible blockers:
 
-- A browser extension overlay (translate, password manager) at the same position, try toggling extensions
-- A zoom level above 200%, the cluster may be off-screen; zoom back down
-- An ancestor CSS transform somewhere in DVSA's markup (rare; the cluster is in a single container specifically to avoid this)
+- A browser extension overlay (translator, password manager) at the same position — toggle extensions.
+- Zoom above 200% — the cluster may be off-screen. Zoom back.
+- Ancestor CSS transform in DVSA's markup (rare — the cluster uses a single container to dodge this).
 
-### "The script's saying 'configure to start' but my values are filled in"
+### Status pill says "configure to start" but values are filled in
 
-Some field is failing validation. Open the settings panel, the offending field will have a red ring around it and an error message just below its fieldset. Common causes:
+Validation is failing somewhere. Open settings: offending fields have red rings. Common causes:
 
-- Date range with start > end
-- Auto-book time window with earliest > latest
-- Search term shorter than 2 characters or still on `AA1 1AA` placeholder
-- Test centre still on `Your Test Centre (Location)` placeholder
+- Start date > end date.
+- Auto-book time window with earliest > latest.
+- Search term shorter than 2 chars, or still on the `AA1 1AA` placeholder.
+- Test centre still on `Your Test Centre (Location)` placeholder.
 
-### "Auto-book clicked the wrong slot / time"
+### Auto-book clicked the wrong slot
 
-Open the settings panel → set **Test mode** on temporarily → reload → verify the script's reading the calendar correctly → turn Test mode off. If it's still misbehaving, [file an issue](https://github.com/alchemycharlie/dvsa-earlier-slot-watcher/issues/new/choose) with:
+Toggle **Test mode** on in settings → reload → verify the script reads the calendar correctly → turn Test mode off. If it persists, [file an issue](https://github.com/alchemycharlie/dvsa-earlier-slot-watcher/issues/new/choose) with the body ID, console snippet, and a calendar screenshot.
 
-- The body ID DVSA was on
-- A console log snippet (`[DVSA Earlier Slot Watcher]` lines)
-- A screenshot of the calendar at the time
-
-**Important**: per the [DISCLAIMER](DISCLAIMER.md), you remain solely responsible for verifying the slot before clicking Confirm changes. The auto-book stops short of that final click on purpose.
+Per the [DISCLAIMER](DISCLAIMER.md), you remain solely responsible for verifying the slot before clicking Confirm changes. Auto-book stops short of that final click on purpose.
 
 ---
 
 ## FAQ
 
 **Does this book new tests for me?**
-**No.** This script is for people who already have a confirmed DVSA practical driving test booking and want to find an earlier cancellation slot to *reschedule* to. It only operates inside DVSA's "Change your test" management flow (`/manage*` URLs). It does not, and technically cannot, book a fresh test from scratch, skip the DVSA application/payment process, or help anyone without a booking get one. If you don't have a test booked, you'll need to go through DVSA's normal booking process first.
+No. It only operates inside DVSA's "Change your test" management flow (`/manage*`). You must already have a confirmed booking.
 
 **Is this legal?**
-The script automates clicks you would otherwise make manually on the existing-booking management section of DVSA's site, using your own login, for a booking that's already yours. Whether your specific use complies with DVSA's terms is your responsibility, see the [DISCLAIMER](DISCLAIMER.md). If you're unsure, seek independent legal advice before installing.
+The script automates clicks you'd otherwise make manually on the management section of DVSA's site, using your own login, for your own booking. Whether your specific use complies with DVSA's terms is your responsibility. See [DISCLAIMER.md](DISCLAIMER.md). Seek independent legal advice if unsure.
 
-**Will this work for HGV, motorcycle, or other test types?**
-Currently the script's `@match` rules and selectors target the **car practical** test booking flow (`driverpracticaltest.dvsa.gov.uk/manage*`). Other test types use different DVSA subdomains and page structures, the script won't work without changes. Contributions welcome.
+**Will it work for HGV, motorcycle, or other test types?**
+No — the script's `@match` rules target the car practical flow only (`driverpracticaltest.dvsa.gov.uk/manage*`). Other test types use different subdomains and pages. Contributions welcome.
 
 **Does it work on mobile?**
-Tampermonkey runs in mobile browsers (Kiwi on Android, some Safari workarounds on iOS), but the script's UI is sized for desktop. Mobile is **untested and unsupported**.
+Mobile is untested and unsupported. The UI is sized for desktop.
 
-**Can I run multiple tabs / instances simultaneously?**
-**No.** Each instance refreshes independently and they'd collide on Imperva's pacing thresholds. Pick one browser, one tab.
+**Can I run multiple tabs / instances?**
+No. They'd refresh independently and trip DVSA's rate limit (Error 15).
+
+**Can I run this on a Raspberry Pi or server?**
+No. The script is designed for an attended desktop browser tab. Headless or server-side use is out of scope.
 
 **How do I update?**
-Tampermonkey checks for updates automatically based on the `@updateURL` in the script header. To force an update: Tampermonkey dashboard → click the script row → **Check for updates**. Your panel-saved settings are preserved across updates.
+Tampermonkey auto-updates from the `@updateURL`. Force an update: dashboard → script row → **Check for updates**. Saved settings are preserved.
 
-**Why doesn't it just book the slot for me?**
-Auto-book deliberately stops on DVSA's "Confirm changes" page. DVSA holds the slot for 15 minutes once you reach this page, giving you time to verify. With one wasted reschedule possibly meaning months until the next opportunity, the human-in-the-loop gate is intentional. See [DISCLAIMER §11](DISCLAIMER.md#11-auto-book-feature-specific-waiver).
+**Why doesn't it auto-click the final Confirm button?**
+DVSA holds the slot for 15 minutes once you reach Confirm. With one wasted reschedule possibly meaning months until the next opportunity, the human-in-the-loop gate is intentional. See [DISCLAIMER §11](DISCLAIMER.md#11-auto-book-feature-specific-waiver).
 
-**How do I share my config with a friend without sharing my credentials?**
-Use the **Backup & restore** section in the settings panel. The export checkbox *"Include auto-login credentials in export"* is **off by default** specifically for this case, your shared JSON will have blank licence/booking-ref fields.
-
-**Can I restore an exported config to a different browser?**
-Yes. Install the script in the new browser, open settings → Backup & restore → **Restore from file…** → pick your exported JSON. The script merges with whatever's already saved (if anything) and reloads.
-
-**What happens if DVSA changes their site?**
-The script's selector-resilience checks fire a *"layout broken"* intervention alert. Monitoring pauses safely until you confirm what changed. Update via Tampermonkey, or [file an issue](https://github.com/alchemycharlie/dvsa-earlier-slot-watcher/issues/new/choose) with the new selectors.
-
-**Can I run this on a Raspberry Pi / always-on home server?**
-The script is designed to run in a logged-in browser as you. Running it headless or server-side is out of scope and not supported. That kind of usage would:
-- Be substantively different from a person checking the page periodically, which is the level of automation this tool was designed to remain at.
-- Likely fall outside what DVSA's terms permit.
-- Require storing your credentials on a server, which the script is not designed to support.
-- Risk consequences for your DVSA account.
-
-Use a desktop browser tab. That's the right level of automation for this.
-
-**Does the script send any data anywhere?**
-No. Zero. Nothing leaves your browser beyond the same requests you'd make manually on the DVSA site. No analytics, no telemetry, no error reporting, no CDN. See the [Privacy section](#privacy) below.
-
-**Why does the script's status pill say "configure to start"?**
-You're missing required configuration (date range, test centre, or search term) or you have a validation error. Click the gear icon, look for fields with red rings.
+**How do I share my config without sharing credentials?**
+Settings → **Backup & restore**. The "Include auto-login credentials in export" checkbox is **off by default** specifically for this. Shared JSON files have blank licence/booking-ref fields.
 
 **Can I disable auto-book once enabled?**
-Yes, open settings, uncheck the *Auto-book through to the confirmation page* checkbox, click Save and reload. The script falls back to alert-only mode immediately.
+Yes. Settings → uncheck **Auto-book through to the confirmation page** → Save. Falls back to alert-only mode immediately.
 
-**My instructor sent me a list of dates they can't do. What's the fastest way to add them?**
-Settings → Instructor unavailable dates → click *"Paste multiple…"* → paste the dates one per line (e.g. `2026-05-26`). Invalid lines are silently skipped. The pill UI shows you what was added.
+**Fastest way to add my instructor's unavailable dates?**
+Settings → Instructor unavailable dates → **Paste multiple…** → paste one date per line (e.g. `2026-05-26`). Invalid lines are silently skipped.
 
 ---
 
 ## Privacy
 
-The script runs entirely in your browser. Specifically:
+- **Nothing is sent to me or anyone else.** No analytics, no telemetry, no error reporting.
+- **All settings live in `localStorage`** in your own browser. Clearing browser data wipes them.
+- **Scan history lives in `localStorage` too.** Export to CSV from the History panel.
+- **Auto-login credentials are optional and local-only.** They're sent only to DVSA's login form, same as if you typed them.
+- **No external CDNs, fonts, or scripts.** One self-contained `.user.js` file. Read it before installing if you want.
 
-- **Nothing is sent to me or anyone else.** No analytics, no telemetry, no error reporting, no "phone home" anything.
-- **All settings are stored in `localStorage`** in your own browser. Clearing browser data wipes them.
-- **Findings (scan history) live in `localStorage` too.** You can export them to CSV from the History panel.
-- **Auto-login credentials are optional** and stored locally only. They're sent to DVSA's own login form, same as if you typed them manually.
-- **No external CDNs, fonts, or scripts** are loaded. The whole thing is one self-contained `.user.js` file. Read it before you install it if you want.
-
-The only network calls the script triggers are the same ones you'd make manually on the DVSA site.
+The only network calls the script triggers are the ones you'd make manually on the DVSA site.
 
 ---
 
 ## Auto-book safety
 
-Auto-book is **opt-in** and disabled by default. When enabled, the script will:
+Auto-book is **opt-in** and disabled by default. When enabled:
 
-1. Click the matching date on the calendar
-2. Click an available time slot within your accepted time window
-3. Click **Continue** on DVSA's "Warning! You'll lose your current booking" modal
-4. **STOP** on the "Confirm changes" review page
+1. Clicks the matching date on the calendar.
+2. Clicks an available time slot within your accepted time window.
+3. Clicks **Continue** on DVSA's "Warning! You'll lose your current booking" modal.
+4. **STOPS** on the "Confirm changes" review page.
 
-The final **Confirm changes** button stays manual. DVSA holds the slot for 15 minutes once you reach this page, giving you time to verify the date, time, and centre are correct before you commit. The script will:
-- Flash the page title with a red countdown
-- Pulse the Confirm button with a yellow highlight
-- Refuse to ever click Confirm or Abandon automatically
+The final Confirm click stays manual. DVSA holds the slot for 15 minutes at that point, giving you time to verify date, time, and centre. While holding, the script:
 
-If you're not comfortable with auto-book, leave it off. The alerts (banner, sound, OS notification) will still fire so you can complete the booking manually.
+- Flashes the page title with a red countdown.
+- Pulses the Confirm button with a yellow highlight.
+- Refuses to ever click Confirm or Abandon automatically.
+
+If you're not comfortable with auto-book, leave it off. The alerts still fire so you can complete manually.
 
 <p align="center">
-  <img src="docs/screenshots/alert-fired.png" alt="The red alert banner that appears when a matching slot is detected, with a 'Show me' button to jump to the slot on the calendar" width="720">
-  <br>
-  <em>What you'll see the moment a matching slot is found. Banner, browser notification, audio chime, and a tab-title flash all fire together.</em>
+  <img src="docs/screenshots/alert-fired.png" alt="The red alert banner when a matching slot is detected, with a 'Show me' button to jump to it" width="720">
 </p>
 
 <p align="center">
-  <img src="docs/screenshots/history-panel.png" alt="The scan history modal showing KPI tiles (total findings, find rate, last 7 days, avg lead time, last spotted) and a table of every detected slot" width="720">
+  <img src="docs/screenshots/history-panel.png" alt="The scan history modal showing KPI tiles and a table of every detected slot" width="720">
   <br>
-  <em>Every match, nearby alert, and spotted date is logged locally. Filter, group, export to CSV, or clear from here.</em>
+  <em>Every match, nearby alert, and spotted date is logged locally.</em>
 </p>
 
 ---
 
 ## Configuration tips
 
-- **Don't go faster than 5 min cycles.** Frequent automated requests place unnecessary load on DVSA's site and will trip its standard rate-limiting (Error 15). The script's 7-12 min default is designed to be comparable to a person checking the page periodically. The interval exists to be respectful of DVSA's infrastructure, not to avoid anything.
-- **Keep the tab focused if you can.** Background tabs get aggressive `setTimeout` throttling in most browsers, which can stretch cycles.
-- **Use Test Mode to verify alerts.** In the Advanced section of the settings panel, toggle Test mode on, the next scan will fire a fake alert so you know banners, sound, and notifications all work. Don't forget to turn it off.
-- **Allow notifications.** When the script first prompts, click Allow. Without notifications the only alert you'll get is in the tab itself.
+- **Don't go below 5-minute cycles.** Faster requests place unnecessary load on DVSA and trip Error 15. The 7-12 min default is comparable to a person checking the page periodically.
+- **Keep the tab focused if you can.** Background tabs get `setTimeout` throttling, which stretches cycles.
+- **Use Test mode to verify alerts.** Toggle it on, next scan fires a fake alert. Don't forget to turn it off.
+- **Allow notifications.** Without them the only alert is in the tab itself.
+
+---
+
+## Before you install
+
+This section consolidates the legal and acceptable-use terms. Full versions are in [DISCLAIMER.md](DISCLAIMER.md).
+
+### Unofficial and unwarranted
+
+This is a free, unofficial, community-built tool. **Not affiliated with, endorsed by, or connected to the DVSA, gov.uk, or the UK Government** in any way.
+
+By installing or using this script you accept:
+
+- **No warranty.** "As is", "as available", no guarantees.
+- **No liability** on the author for missed slots, lost bookings, account issues, incorrect bookings, missed alerts, or any other consequence.
+- **You are solely responsible** for complying with DVSA's terms and for verifying every booking detail before clicking Confirm.
+
+Full terms: **[DISCLAIMER.md](DISCLAIMER.md)**. If you don't accept them, do not install.
+
+### Existing bookings only
+
+The script is for people with an **existing, paid, confirmed** DVSA practical driving test booking who want to find an earlier cancellation slot at the same test centre and reschedule.
+
+What it exists to do: remove the manual effort of repeatedly refreshing the "Change your test" page.
+
+What it will not do:
+
+- Book a new test from scratch.
+- Skip the DVSA application or payment flow.
+- Snap up newly-released slots before they reach DVSA's public booking page.
+- Circumvent, evade, or interfere with DVSA's security measures.
+
+The script only operates on `driverpracticaltest.dvsa.gov.uk/manage*` and `/login*`. It never touches the fresh-booking application URL. For the full treatment of how the script behaves around CAPTCHA, rate limits, page-structure changes, and session expiry, see [docs/SECURITY-POSTURE.md](docs/SECURITY-POSTURE.md).
+
+### Permitted use
+
+For **individual personal use only**, by people in the UK who hold their own DVSA practical driving test booking and wish to reschedule to an earlier date.
+
+**Not permitted:**
+
+- Use on behalf of any other person (friends, family, pupils, clients).
+- Use across multiple DVSA accounts.
+- Commercial use of any kind. Driving instructors and schools must not run the script on behalf of pupils.
+- Use for malicious or unlawful purposes, or anything that breaches DVSA terms, DVLA terms, the Computer Misuse Act 1990, or any other applicable UK law.
+- Wrapping the script inside headless browsers, automation frameworks, or unattended server-side automation.
+- Use outside the UK.
+
+The script is, and will remain, free for genuine individual users. It must not be copied, modified, redistributed, or forked for financial gain. Forks intended to break, weaponise, or maliciously alter the script's behaviour are not endorsed by the author.
+
+Full details: [DISCLAIMER §3 (Acceptable Use)](DISCLAIMER.md#3-acceptable-use-policy), [§4 (Distribution and Forks)](DISCLAIMER.md#4-distribution-modification-and-forks), [§5 (Project Philosophy)](DISCLAIMER.md#5-project-philosophy).
+
+By completing installation and saving any configuration, you confirm that you have read and accepted the terms in [DISCLAIMER.md](DISCLAIMER.md).
 
 ---
 
 ## Contributing
 
-Issues and PRs welcome. Please use the templates in [.github/ISSUE_TEMPLATE](.github/ISSUE_TEMPLATE/).
+Issues and PRs welcome. Use the templates in [.github/ISSUE_TEMPLATE](.github/ISSUE_TEMPLATE/).
 
-Before submitting a bug, please include:
-- Your Tampermonkey version and browser
-- A console log snippet (`[DVSA Earlier Slot Watcher]` lines)
-- The page state when it happened (which DVSA page were you on?)
+For bug reports, please include:
+
+- Tampermonkey version and browser.
+- Console log snippet (`[DVSA Earlier Slot Watcher]` lines).
+- The DVSA page state when it happened.
 
 ---
 
-## Support development
+## Support
 
-This script is free, open source, and ad-free. If it's helped you get an earlier test date, or just saved you hours of refreshing, a coffee is genuinely appreciated.
+Free, open source, and ad-free. If it's helped you find an earlier test date, a coffee is appreciated.
 
 [![Buy Me a Coffee](https://img.shields.io/badge/Buy%20Me%20a%20Coffee-%E2%98%95-yellow.svg)](https://buymeacoffee.com/charlie.martina)
 
 ---
 
-## License and disclaimer
+## License
 
-- **Code license**: MIT, see [LICENSE](LICENSE).
-- **Disclaimer and limitation of liability**: see [DISCLAIMER.md](DISCLAIMER.md). Installing or using the Software constitutes acceptance of these terms in full.
+- **Code:** MIT, see [LICENSE](LICENSE).
+- **Disclaimer and limitation of liability:** [DISCLAIMER.md](DISCLAIMER.md). Installing or using the Software constitutes acceptance in full.
 
-This is an independent, unofficial tool. Not affiliated with, endorsed by, or connected to the DVSA, the UK Government, or gov.uk in any way.
+Independent, unofficial tool. Not affiliated with the DVSA, the UK Government, or gov.uk.
