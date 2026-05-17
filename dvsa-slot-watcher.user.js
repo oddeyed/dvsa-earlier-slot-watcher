@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         DVSA Earlier Slot Watcher
 // @namespace    https://github.com/alchemycharlie/dvsa-earlier-slot-watcher
-// @version      1.0.0
+// @version      1.0.1
 // @description  For UK learner drivers with an existing DVSA practical driving test booking. Watches the "Change your test" calendar for an earlier cancellation slot at your chosen test centre, alerts you the moment one appears in your target date window, and can optionally auto-reschedule up to the final confirmation page. Does NOT book new tests, you must already have a booking.
 // @author       alchemycharlie
 // @homepageURL  https://github.com/alchemycharlie/dvsa-earlier-slot-watcher
@@ -22,7 +22,7 @@
     // Script version. Kept in sync with the @version line in the userscript
     // header at the top of this file. Surfaced in the About pane of the
     // settings panel and in the self-test diagnostic output for bug reports.
-    const SCRIPT_VERSION = '1.0.0';
+    const SCRIPT_VERSION = '1.0.1';
 
     // Tab-focus tracking. Browsers throttle setTimeout (and other timers) when
     // a tab is in the background, which can stretch the script's refresh
@@ -2474,7 +2474,7 @@
                 <button type="button" class="dvsa-wiz-skip-panel" id="dvsa-wiz-skip-to-panel" title="Skip the wizard and use the full settings panel instead">Use the full settings panel →</button>
                 <div class="dvsa-wiz-footer-spacer"></div>
                 ${step > 1 ? '<button type="button" class="dvsa-btn" id="dvsa-wiz-back">← Back</button>' : ''}
-                ${(step === 4 || step === 5) ? '<button type="button" class="dvsa-btn" id="dvsa-wiz-skip">Skip</button>' : ''}
+                ${step === 4 ? '<button type="button" class="dvsa-btn" id="dvsa-wiz-skip">Skip</button>' : ''}
                 ${step < 5 ? '<button type="button" class="dvsa-btn dvsa-btn-primary" id="dvsa-wiz-next">' + (step === 1 ? 'Get started →' : 'Next →') + '</button>' : '<button type="button" class="dvsa-btn dvsa-btn-primary" id="dvsa-wiz-finish">Finish setup ✓</button>'}
             </div>
         `;
@@ -2685,6 +2685,25 @@
                 toggle.addEventListener('change', sync);
                 sync();
             }
+
+            // Auto-book consent gate inside the wizard. Mirrors the panel's
+            // change-listener path so a user who enables auto-book during
+            // setup gets the same explicit consent modal (with its three
+            // acknowledgements and link to DISCLAIMER section 11) as a user
+            // who enables auto-book later via the settings panel. Without
+            // this, the wizard would be a quieter path to enable a feature
+            // that deserves a deliberate moment.
+            const autoBookCheckbox = panel.querySelector('#dvsa-wiz-autobook');
+            if (autoBookCheckbox) {
+                autoBookCheckbox.addEventListener('change', () => {
+                    if (autoBookCheckbox.checked && !getAutoBookAck()) {
+                        openAutoBookConsentModal({
+                            onCancel: () => { autoBookCheckbox.checked = false; }
+                            // onConfirm: nothing to do, the modal writes the ack flag itself
+                        });
+                    }
+                });
+            }
         }
     }
 
@@ -2845,15 +2864,15 @@
         try {
             localStorage.setItem(PANEL_CONFIG_KEY, JSON.stringify(cfg));
             localStorage.setItem(WIZARD_COMPLETED_KEY, new Date().toISOString());
-            // If the wizard saved auto-book as enabled, mark it as acknowledged.
-            // The wizard's welcome step covers the disclaimer acceptance and
-            // step 5's auto-book checkbox description explains the trade-off,
-            // so the wizard's own flow satisfies our informed-consent requirement.
-            // Without this, the user would be re-prompted by the consent modal
-            // on their next panel save, which is redundant.
-            if (c.AUTO_BOOK) {
-                setAutoBookAck();
-            }
+            // Auto-book consent acknowledgement is handled by the wizard's own
+            // step 5 change-listener (mirrors the panel's behaviour). The
+            // listener fires openAutoBookConsentModal when the checkbox
+            // transitions to checked and no prior ack exists, and the modal
+            // writes the ack flag on Confirm or unticks the checkbox on
+            // Cancel. So by the time finishWizard runs, either auto-book is
+            // off (no ack needed) or auto-book is on AND the user has
+            // already confirmed (ack flag already written). No fallback set
+            // here is required.
             log('Setup wizard completed. Reloading.');
             window.location.reload();
         } catch (e) {

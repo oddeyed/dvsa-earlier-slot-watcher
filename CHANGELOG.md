@@ -6,13 +6,21 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and thi
 
 ---
 
-## [Unreleased]
+## [1.0.1], 2026-05-17
+
+### Fixed
+
+- **Auto-book consent modal now fires from the wizard.** Previously, ticking the auto-book checkbox in step 5 of the first-run wizard would silently enable the feature without firing the explicit-consent modal that the post-wizard settings panel uses. Both paths now share the same modal with the same three acknowledgements and link to DISCLAIMER section 11. The wizard's onboarding can no longer be a quieter path to enable an elevated-risk feature.
+- **Skip button on the wizard's final step was a no-op.** The Skip handler clamped at step 5, so clicking Skip on step 5 stayed on step 5. The button is now hidden on the final step (the Finish button is the correct action there).
+- **Removed a now-redundant implicit ack-setter in `finishWizard()`.** It existed as a workaround for the wizard not firing the consent modal; with the modal now firing from the wizard, the workaround is obsolete and was masking the model.
 
 ### Documentation
 
 - README install steps now include an explicit "Chrome / Edge / Brave: enable Allow User Scripts" step between installing Tampermonkey and installing the script. This catches a common Chromium-only gotcha where Tampermonkey can install the script but won't actually run it until the user toggles "Allow User Scripts" in the extension's Details page. Firefox is unaffected.
 - New troubleshooting entry covering the "I installed the script but nothing happens" symptom that this Chromium quirk causes, with a direct fix.
 - Both sections link to the official Tampermonkey FAQ Q209 for canonical guidance.
+
+[1.0.1]: https://github.com/alchemycharlie/dvsa-earlier-slot-watcher/releases/tag/v1.0.1
 
 ---
 
