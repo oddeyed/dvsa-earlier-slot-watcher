@@ -32,7 +32,7 @@ For users with an existing DVSA test booking who want to reschedule earlier:
 <p align="center">
   <img src="docs/screenshots/settings-panel.png" alt="The settings panel showing the Health card, Date window, monitoring preview, test centre dropdown, refresh interval, and other configuration options" width="720">
   <br>
-  <em>The in-page settings panel. Everything's configured here, no code editing required.</em>
+  The in-page settings panel. Everything's configured here, no code editing required.
 </p>
 
 ---
@@ -101,31 +101,31 @@ Tampermonkey opens its install screen. Click **Install**. It'll auto-update from
   <tr>
     <td align="center" valign="top" width="33%">
       <img src="docs/screenshots/wizard-welcome.png" alt="Wizard step 1: Welcome screen with prerequisite reminder and disclaimer acceptance" width="280">
-      <br><em>Step 1: Welcome &amp; disclaimer</em>
+      <br>Step 1: Welcome &amp; disclaimer
     </td>
     <td align="center" valign="top" width="33%">
       <img src="docs/screenshots/wizard-test-by-range.png" alt="Wizard step 2: Date window picker with live preview" width="280">
-      <br><em>Step 2: Date window with live preview</em>
+      <br>Step 2: Date window with live preview
     </td>
     <td align="center" valign="top" width="33%">
       <img src="docs/screenshots/wizard-test-centre.png" alt="Wizard step 3: Test centre dropdown with search and search term field" width="280">
-      <br><em>Step 3: Test centre + search term</em>
+      <br>Step 3: Test centre + search term
     </td>
   </tr>
 </table>
 
-<p align="center"><em>Steps 4 and 5 cover instructor dates and final options (refresh interval, auto-book opt-in, auto-login). Both are skippable.</em></p>
+<p align="center">Steps 4 and 5 cover instructor dates and final options (refresh interval, auto-book opt-in, auto-login). Both are skippable.</p>
 
 <p align="center">
   <img src="docs/screenshots/monitoring-preview.png" alt="The 'What you're monitoring' card showing a live breakdown of how many dates would alert vs total in range" width="600">
   <br>
-  <em>"What you're monitoring" updates live as you tune the date window, weekend toggle, and instructor dates.</em>
+  "What you're monitoring" updates live as you tune the date window, weekend toggle, and instructor dates.
 </p>
 
 <p align="center">
   <img src="docs/screenshots/status-pill.png" alt="The floating status pill in the bottom-right showing the scanning state with a live countdown" width="380">
   <br>
-  <em>Status pill: current state + countdown to next refresh.</em>
+  Status pill: current state + countdown to next refresh.
 </p>
 
 ---
@@ -295,7 +295,7 @@ If you're not comfortable with auto-book, leave it off. The alerts still fire so
 <p align="center">
   <img src="docs/screenshots/history-panel.png" alt="The scan history modal showing KPI tiles and a table of every detected slot" width="720">
   <br>
-  <em>Every match, nearby alert, and spotted date is logged locally.</em>
+  Every match, nearby alert, and spotted date is logged locally.
 </p>
 
 ---
