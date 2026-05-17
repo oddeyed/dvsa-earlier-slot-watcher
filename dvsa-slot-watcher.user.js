@@ -1996,6 +1996,23 @@
                 line-height: 1.55;
                 color: #0b0c0c;
             }
+            .dvsa-wiz-import-callout {
+                margin: 14px 0 0;
+                padding: 14px 16px;
+                background: #f3f2f1;
+                border: 1px solid #dadcde;
+                border-radius: 6px;
+                font-size: 13px;
+                line-height: 1.5;
+            }
+            .dvsa-wiz-import-callout strong { color: #0b0c0c; font-weight: 600; }
+            .dvsa-wiz-import-callout p {
+                color: #505a5f;
+                margin: 4px 0 10px;
+                font-size: 12.5px;
+                line-height: 1.5;
+            }
+            .dvsa-wiz-import-callout .dvsa-err { margin-top: 8px; }
             .dvsa-wiz-summary {
                 margin: 0 0 16px;
                 padding: 12px 14px;
@@ -2505,6 +2522,13 @@
                         <div class="dvsa-wiz-callout">
                             <strong>⚠ Before you continue:</strong> By proceeding you accept the terms in the <a href="https://github.com/alchemycharlie/dvsa-earlier-slot-watcher/blob/main/DISCLAIMER.md" target="_blank" rel="noopener noreferrer" style="color:#1d70b8;font-weight:600;">disclaimer</a>. The script is provided "as is" with no warranty, no liability for missed slots or account issues, and no affiliation with DVSA.
                         </div>
+                        <div class="dvsa-wiz-import-callout">
+                            <strong>Already have a config from a previous install?</strong>
+                            <p>If you've exported your settings from another browser or device, you can restore them here instead of walking through the wizard. The page will reload immediately after applying.</p>
+                            <button id="dvsa-wiz-import" type="button" class="dvsa-btn">Import existing config…</button>
+                            <input id="dvsa-wiz-import-input" type="file" accept="application/json,.json" style="display:none;">
+                            <div class="dvsa-err" id="dvsa-wiz-err-import"></div>
+                        </div>
                     </div>
                 `;
             case 2:
@@ -2638,6 +2662,64 @@
 
     function wireWizardStepInputs(panel) {
         const step = _wizardState.step;
+
+        if (step === 1) {
+            // Import-existing-config path. Lets a user with a previously-exported
+            // JSON config (e.g. moving to a new browser, restoring after a
+            // browser-data wipe) skip the rest of the wizard and apply that
+            // config directly. Reuses parseImportedConfig + summariseImportedConfig
+            // from the panel's Backup & restore section, with one wizard-specific
+            // addition: on successful apply, also write WIZARD_COMPLETED_KEY so
+            // the wizard doesn't re-fire after the reload, and write the
+            // auto-book ack flag if the imported config has AUTO_BOOK=true.
+            // The import-confirm dialog explicitly shows "Auto-book: on" in
+            // its summary, so the user's OK click is informed acknowledgement
+            // analogous to the in-wizard consent modal on step 5.
+            const importBtn   = panel.querySelector('#dvsa-wiz-import');
+            const importInput = panel.querySelector('#dvsa-wiz-import-input');
+            const errSlot     = panel.querySelector('#dvsa-wiz-err-import');
+
+            if (importBtn && importInput) {
+                importBtn.addEventListener('click', () => importInput.click());
+                importInput.addEventListener('change', () => {
+                    if (errSlot) errSlot.textContent = '';
+                    const file = importInput.files && importInput.files[0];
+                    if (!file) return;
+                    const reader = new FileReader();
+                    reader.onload = () => {
+                        const result = parseImportedConfig(String(reader.result || ''));
+                        if (!result.ok) {
+                            if (errSlot) errSlot.textContent = result.error;
+                            importInput.value = '';
+                            return;
+                        }
+                        const summary = summariseImportedConfig(result.settings, result.meta);
+                        const confirmMsg = `Restore these settings from "${file.name}" and skip the rest of the wizard?\n\n${summary}\n\nThe page will reload immediately after applying. Click OK to proceed.`;
+                        if (!window.confirm(confirmMsg)) {
+                            importInput.value = '';
+                            return;
+                        }
+                        try {
+                            const current = JSON.parse(localStorage.getItem(PANEL_CONFIG_KEY) || '{}');
+                            const merged = { ...current, ...result.settings };
+                            localStorage.setItem(PANEL_CONFIG_KEY, JSON.stringify(merged));
+                            localStorage.setItem(WIZARD_COMPLETED_KEY, new Date().toISOString());
+                            if (result.settings.AUTO_BOOK === true) {
+                                setAutoBookAck();
+                            }
+                            log('Config imported via wizard. Reloading.');
+                            window.location.reload();
+                        } catch (e) {
+                            if (errSlot) errSlot.textContent = 'Failed to apply imported config: ' + e.message;
+                        }
+                    };
+                    reader.onerror = () => {
+                        if (errSlot) errSlot.textContent = 'Could not read file.';
+                    };
+                    reader.readAsText(file);
+                });
+            }
+        }
 
         if (step === 2) {
             const updatePreview = () => renderWizardPreview(panel);
