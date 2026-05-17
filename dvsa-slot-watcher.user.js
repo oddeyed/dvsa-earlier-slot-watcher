@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         DVSA Earlier Slot Watcher
 // @namespace    https://github.com/alchemycharlie/dvsa-earlier-slot-watcher
-// @version      1.0.3
+// @version      1.0.4
 // @description  For UK learner drivers with an existing DVSA practical driving test booking. Watches the "Change your test" calendar for an earlier cancellation slot at your chosen test centre, alerts you the moment one appears in your target date window, and can optionally auto-reschedule up to the final confirmation page. Does NOT book new tests, you must already have a booking.
 // @author       alchemycharlie
 // @homepageURL  https://github.com/alchemycharlie/dvsa-earlier-slot-watcher
@@ -22,7 +22,7 @@
     // Script version. Kept in sync with the @version line in the userscript
     // header at the top of this file. Surfaced in the About pane of the
     // settings panel and in the self-test diagnostic output for bug reports.
-    const SCRIPT_VERSION = '1.0.3';
+    const SCRIPT_VERSION = '1.0.4';
 
     // Tab-focus tracking. Browsers throttle setTimeout (and other timers) when
     // a tab is in the background, which can stretch the script's refresh
@@ -127,9 +127,9 @@
     // What the user should actually do for each intervention type
     const INTERVENTION_INSTRUCTIONS = {
         'captcha challenge':     'Solve the captcha to continue.',
-        'Error 15 temp block':   'Switch to a private browsing window. Block expires in ~15 minutes.',
+        'Error 15 temp block':   'Standard DVSA rate-limit response. Script paused. Wait for the block to clear naturally (typically 1-2 hours), then resume.',
         'session expired':       'Re-enter your driving licence number and booking reference.',
-        'test centre mismatch':  'Calendar loaded a different test centre. Monitoring is paused, verify EXPECTED_CENTRE and reload.',
+        'test centre mismatch':  'Calendar loaded a different test centre. Monitoring is paused. Verify your configured test centre and reload.',
         'DVSA layout changed':   'A page element the script needs is missing. DVSA may have updated their site, check for a script update.'
     };
 
@@ -3220,7 +3220,7 @@
                         <span class="dvsa-input-unit"><input id="dvsa-refresh-max" type="number" min="5" max="60" class="dvsa-in dvsa-narrow" value="${REFRESH_MAX_MINS}"><span class="dvsa-unit">min</span></span>
                     </label>
                 </div>
-                <p class="dvsa-hint">Randomised each cycle. Faster than 5 minutes risks an Error 15 temporary block.</p>
+                <p class="dvsa-hint">Randomised each cycle. Faster than 5 minutes is likely to trip DVSA's standard rate-limiting (Error 15) and is not recommended.</p>
                 <div id="dvsa-err-refresh" class="dvsa-err"></div>
             </fieldset>
 

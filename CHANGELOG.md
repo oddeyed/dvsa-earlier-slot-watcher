@@ -6,6 +6,18 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and thi
 
 ---
 
+## [1.0.4], 2026-05-17
+
+### Changed
+
+- **Error 15 intervention banner reworded to match the project's stated security posture.** The banner previously advised users to "switch to a private browsing window" to work around DVSA's rate-limit response, which directly contradicted the project's stated principle that the Software does not attempt to circumvent DVSA's security measures (see [docs/SECURITY-POSTURE.md](docs/SECURITY-POSTURE.md)). The banner now reads: *"Standard DVSA rate-limit response. Script paused. Wait for the block to clear naturally (typically 1-2 hours), then resume."* The expected wait time was also corrected (previously "~15 minutes", which contradicted the 1-2 hour figure stated in the README and SECURITY-POSTURE doc).
+- **Centre-mismatch intervention instruction** no longer leaks the internal `EXPECTED_CENTRE` variable name. Reworded to *"Calendar loaded a different test centre. Monitoring is paused. Verify your configured test centre and reload."*
+- **Settings-panel refresh-interval hint** reworded to describe DVSA's response in consistent terms: *"Faster than 5 minutes is likely to trip DVSA's standard rate-limiting (Error 15) and is not recommended."*
+
+[1.0.4]: https://github.com/alchemycharlie/dvsa-earlier-slot-watcher/releases/tag/v1.0.4
+
+---
+
 ## [1.0.3], 2026-05-17
 
 ### Added
