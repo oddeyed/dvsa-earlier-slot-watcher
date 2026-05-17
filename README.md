@@ -34,14 +34,17 @@
 >
 > This script helps people with an **existing, paid, confirmed DVSA practical driving test booking** find an earlier cancellation slot at the same test centre and **reschedule** their booking to that slot.
 >
-> It does **not**, and **cannot**:
+> **What the tool exists to do**: remove the manual effort of repeatedly refreshing the DVSA "Change your test" page yourself, and notify you the moment a slot you'd accept appears.
 >
-> - Book a new test from scratch
-> - Skip the DVSA application or payment flow
-> - Help anyone without a booking get one
-> - Snap up newly-released slots before they reach DVSA's public booking page
+> **What the tool does not, and will not, do**:
 >
-> Technically: the script only operates on `driverpracticaltest.dvsa.gov.uk/manage*` and `/login*`, the "Change your test" management flow. It never touches the fresh-booking application URL.
+> - Book a new test from scratch.
+> - Skip the DVSA application or payment flow.
+> - Help anyone without a booking get one.
+> - Snap up newly-released slots before they reach DVSA's public booking page.
+> - **Circumvent, evade, or interfere with DVSA's security measures.** When DVSA presents a CAPTCHA, the script pauses and hands control back to you. When DVSA returns a rate-limit response (Error 15), the script stops and waits for the block to clear. When DVSA changes its page structure, the script halts safely rather than guessing. Every interaction the script performs is one a logged-in human could perform manually through the same site. The script's value is in saving your time, not in giving you any technical advantage over another human user.
+>
+> Technically: the script only operates on `driverpracticaltest.dvsa.gov.uk/manage*` and `/login*`, the "Change your test" management flow. It paces its requests at a default 7-12 minute interval to remain comparable to a person checking the page periodically. It never touches the fresh-booking application URL.
 >
 > If you don't already have a test booked, you'll need to go through DVSA's normal booking process first. Then come back here.
 
@@ -108,7 +111,7 @@ For users with an existing DVSA test booking who want to reschedule to an earlie
 - **Alerts you four ways at once** when a match appears: red banner, browser notification, audio chime, and a tab-title flash
 - **Auto-books (opt-in)** through to DVSA's "Confirm changes" page, the final commit stays manual so you can verify the slot
 - **Logs every finding** to local browser storage so you can review later or export to CSV
-- **Speaks Spring WebFlow**, handles DVSA's session-expired flow, auto-login if you provide credentials, and Imperva bot-protection cycle pacing
+- **Speaks Spring WebFlow**, handles DVSA's session-expired flow, optional auto-login if you provide credentials, and operates at a default 7-12 minute cycle to remain comparable to a person checking the page periodically
 - **Self-heals** discovered test centre names into the settings dropdown
 - **Stays 100% local**, no analytics, no telemetry, no external network calls beyond DVSA itself
 
@@ -249,32 +252,36 @@ If audio is still silent: check your browser's site-level audio permission, syst
 
 ### "Error 15" / Temporary block from DVSA
 
-DVSA's Imperva bot protection has flagged your IP. The script detects this and surfaces a red intervention banner so you know to stop scanning. The block usually clears in **1–2 hours** without intervention. To reduce the chance of it happening again:
+DVSA returns an "Error 15" response when its security layer determines that too many requests are arriving from your IP in a short period. This is a standard protection of DVSA's booking system. The temporary block usually clears within **1-2 hours**. The script recognises this response and pauses, surfacing an intervention banner so you can wait it out, exactly as you would if you'd encountered the same response browsing manually.
 
-- Increase the refresh interval in the settings panel (the default 7–12 min is comfortably human-paced; faster is asking for trouble)
-- Don't run multiple instances of the script across multiple tabs / browsers / devices simultaneously
-- Avoid mashing the **Test alert** button to verify things work, that doesn't trigger Imperva, but it's a sign you might be over-refreshing
+The script paces its requests at a default 7-12 minute interval specifically so that it falls comfortably within DVSA's expected use patterns. If you've received an Error 15 response, it usually means one of the following:
+
+- The refresh interval has been set faster than the default. Restore it to the default (or higher).
+- The script is running in multiple tabs, browsers, or devices simultaneously. Stop all but one.
+- Other traffic from your IP (another tool, another household member browsing DVSA) is adding to the request count.
+
+The script does not, and will not, attempt to work around an Error 15 response. Wait for the block to clear naturally and the script's next refresh cycle will resume monitoring.
 
 <p align="center">
-  <img src="docs/screenshots/error-15-lockout-detection.png" alt="The red intervention banner that appears when the script detects DVSA's Imperva temporary block (Error 15)" width="720">
+  <img src="docs/screenshots/error-15-lockout-detection.png" alt="The red intervention banner that appears when the script recognises DVSA's Error 15 temporary-block response" width="720">
   <br>
-  <em>What the Error 15 intervention banner looks like. Scanning pauses safely until the block clears and you reload the tab.</em>
+  <em>The Error 15 intervention banner. The script pauses and waits; it doesn't try to retry around the block.</em>
 </p>
 
-### "Imperva captcha appeared" intervention
+### "CAPTCHA appeared" intervention
 
-DVSA's bot-detection layer (Imperva) occasionally challenges visitors with a captcha rather than a hard temporary block. The script detects this and pauses safely instead of trying to click through a captcha page.
+DVSA's site occasionally presents a CAPTCHA challenge as part of its standard security measures. The script recognises this state and pauses, surfacing an intervention banner so you can complete the challenge yourself, exactly as you would if you were browsing the page manually. The script does not, and will not, attempt to solve, click through, or work around CAPTCHAs in any way. Solving them is the user's responsibility, and the script is designed to step back and respect that.
 
 What to do:
 
-1. Solve the captcha on the DVSA page yourself
-2. Once you're back on the booking pages, the script's next refresh cycle will resume monitoring automatically
-3. If captchas keep appearing every cycle, your IP may be under heavier Imperva scrutiny. Increase the refresh interval to 15–30 min and wait a few hours before resuming. Persistent captchas often clear by themselves once your traffic pattern looks more human
+1. Complete the CAPTCHA on the DVSA page yourself.
+2. Once you're back on the booking pages, the script's next refresh cycle will resume monitoring.
+3. If CAPTCHAs keep appearing every cycle, your IP may be under heavier scrutiny than usual. Increase the refresh interval to 15-30 min and wait a few hours before resuming.
 
 <p align="center">
-  <img src="docs/screenshots/captcha-detection.png" alt="The intervention banner that appears when the script detects an Imperva captcha challenge in the DVSA page" width="720">
+  <img src="docs/screenshots/captcha-detection.png" alt="The intervention banner that appears when the script recognises a CAPTCHA challenge on the DVSA page" width="720">
   <br>
-  <em>Captcha-detection intervention. The script doesn't try to solve captchas, that's a cat-and-mouse game we deliberately don't play.</em>
+  <em>CAPTCHA-recognition intervention. Solving CAPTCHAs is the user's job; the script's job is to recognise the state and hand control back.</em>
 </p>
 
 ### "Layout broken" intervention alert
@@ -360,11 +367,11 @@ Yes. Install the script in the new browser, open settings → Backup & restore �
 The script's selector-resilience checks fire a *"layout broken"* intervention alert. Monitoring pauses safely until you confirm what changed. Update via Tampermonkey, or [file an issue](https://github.com/alchemycharlie/dvsa-earlier-slot-watcher/issues/new/choose) with the new selectors.
 
 **Can I run this on a Raspberry Pi / always-on home server?**
-The script is designed to run in a logged-in browser as you. Headless / server-side scanning would:
-- Probably violate DVSA's terms
-- Make Imperva's bot detection trivially aware (no real browser fingerprint)
-- Require storing your credentials on that server
-- Risk locking your account
+The script is designed to run in a logged-in browser as you. Running it headless or server-side is out of scope and not supported. That kind of usage would:
+- Be substantively different from a person checking the page periodically, which is the level of automation this tool was designed to remain at.
+- Likely fall outside what DVSA's terms permit.
+- Require storing your credentials on a server, which the script is not designed to support.
+- Risk consequences for your DVSA account.
 
 Use a desktop browser tab. That's the right level of automation for this.
 
@@ -428,7 +435,7 @@ If you're not comfortable with auto-book, leave it off. The alerts (banner, soun
 
 ## Configuration tips
 
-- **Don't go faster than 5 min cycles.** DVSA's Imperva bot detection will issue a temporary block (Error 15) if you scan too frequently. The script's 7–12 min default is comfortably human-paced.
+- **Don't go faster than 5 min cycles.** Frequent automated requests place unnecessary load on DVSA's site and will trip its standard rate-limiting (Error 15). The script's 7-12 min default is designed to be comparable to a person checking the page periodically. The interval exists to be respectful of DVSA's infrastructure, not to avoid anything.
 - **Keep the tab focused if you can.** Background tabs get aggressive `setTimeout` throttling in most browsers, which can stretch cycles.
 - **Use Test Mode to verify alerts.** In the Advanced section of the settings panel, toggle Test mode on, the next scan will fire a fake alert so you know banners, sound, and notifications all work. Don't forget to turn it off.
 - **Allow notifications.** When the script first prompts, click Allow. Without notifications the only alert you'll get is in the tab itself.

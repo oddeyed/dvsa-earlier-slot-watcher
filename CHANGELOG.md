@@ -51,7 +51,7 @@ The older date-focused flow remains available as a manual path: if a user clicks
 
 Reasons:
 - The centre-search response shows multiple centres' availability per request, so `ALERT_ANY_CENTRE` becomes meaningful.
-- One request per cycle instead of a full calendar walk: lighter load, lower bot-detection signal.
+- One request per cycle instead of a full calendar walk: lighter load on DVSA's site, more in line with normal human use of the page.
 - Per-cycle navigation stays on the search page rather than reloading `/manage` each time.
 - The script only drills into a calendar when a match is actually found, rather than always loading one.
 

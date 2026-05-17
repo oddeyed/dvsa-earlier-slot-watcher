@@ -475,8 +475,12 @@
 
     // Brief stagger between actions. Used to let DOM/animations settle between
     // clicks and add a little timing jitter. Values are deliberately short:
-    // the script's anti-detection strategy is "human-plausible cycle rate
-    // (7-12 min)" not "human-plausible click timing within a session".
+    // the script's pacing approach is "human-comparable cycle rate (7-12 min
+    // between page checks)" rather than "fine-grained click timing within a
+    // single session". The cycle interval is the part that matters for being
+    // respectful of DVSA's infrastructure and falling within their normal
+    // rate-limiting thresholds; the per-action timing inside a single cycle
+    // is just there to let DOM/animations settle.
     function humanPause(minSec, maxSec) {
         const ms = minSec * 1000 + Math.random() * (maxSec - minSec) * 1000;
         return new Promise(r => setTimeout(r, ms));
