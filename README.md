@@ -7,7 +7,9 @@
 [![Userscript](https://img.shields.io/badge/userscript-Tampermonkey-orange.svg)](https://www.tampermonkey.net/)
 [![Disclaimer](https://img.shields.io/badge/read-disclaimer-yellow.svg)](DISCLAIMER.md)
 
-<!-- TODO: drop a hero screenshot here once you have one, settings panel + status pill on a DVSA page works well -->
+<p align="center">
+  <img src="docs/screenshots/hero.png" alt="The DVSA Earlier Slot Watcher running on a DVSA booking page, showing the floating status pill and settings gear in the bottom-right corner" width="900">
+</p>
 
 ---
 
@@ -110,7 +112,11 @@ For users with an existing DVSA test booking who want to reschedule to an earlie
 - **Self-heals** discovered test centre names into the settings dropdown
 - **Stays 100% local**, no analytics, no telemetry, no external network calls beyond DVSA itself
 
-<!-- TODO: settings panel screenshot here, shows the date window + monitoring preview + test centre dropdown nicely -->
+<p align="center">
+  <img src="docs/screenshots/settings-panel.png" alt="The settings panel showing the Health card, Date window, monitoring preview, test centre dropdown, refresh interval, and other configuration options" width="720">
+  <br>
+  <em>The in-page settings panel. Everything's configured here, no code editing required.</em>
+</p>
 
 ---
 
@@ -169,7 +175,17 @@ Once installed, it'll auto-update from this same URL whenever a new version is r
 
 > By completing installation and saving any configuration, you confirm that you have read and accepted the terms in [DISCLAIMER.md](DISCLAIMER.md).
 
-<!-- TODO: status pill close-up screenshot, captioned "Always know what the script is doing" -->
+<p align="center">
+  <img src="docs/screenshots/monitoring-preview.png" alt="The 'What you're monitoring' card showing a live breakdown: 47 dates would alert, 72 total in range, with a coloured stacked bar showing alertable, weekend-excluded, and instructor-blocked portions" width="600">
+  <br>
+  <em>The settings panel's "What you're monitoring" card updates live as you adjust the date window, weekend toggle, and instructor dates.</em>
+</p>
+
+<p align="center">
+  <img src="docs/screenshots/status-pill.png" alt="The floating status pill in the bottom-right of the screen showing scanning state with a live countdown to the next refresh cycle" width="380">
+  <br>
+  <em>Always know what the script is doing. The status pill shows the current state and a countdown to the next refresh.</em>
+</p>
 
 ---
 
@@ -346,6 +362,18 @@ The final **Confirm changes** button stays manual. DVSA holds the slot for 15 mi
 - Refuse to ever click Confirm or Abandon automatically
 
 If you're not comfortable with auto-book, leave it off. The alerts (banner, sound, OS notification) will still fire so you can complete the booking manually.
+
+<p align="center">
+  <img src="docs/screenshots/alert-fired.png" alt="The red alert banner that appears when a matching slot is detected, with a 'Show me' button to jump to the slot on the calendar" width="720">
+  <br>
+  <em>What you'll see the moment a matching slot is found. Banner, browser notification, audio chime, and a tab-title flash all fire together.</em>
+</p>
+
+<p align="center">
+  <img src="docs/screenshots/history-panel.png" alt="The scan history modal showing KPI tiles (total findings, find rate, last 7 days, avg lead time, last spotted) and a table of every detected slot" width="720">
+  <br>
+  <em>Every match, nearby alert, and spotted date is logged locally. Filter, group, export to CSV, or clear from here.</em>
+</p>
 
 ---
 
