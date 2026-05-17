@@ -1,0 +1,166 @@
+# Changelog
+
+All notable changes to this project are documented here.
+
+Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+
+---
+
+## [1.0.0], 2026-05-17
+
+Initial public release.
+
+### Default search flow
+
+The auto-cycling search now uses the **multi-centre test-centre search** rather than the older single-centre date-focused walk. On the booking management page, the script clicks the test-centre "Change" link (`#test-centre-change`), which lands on the postcode-search page where `handleTestCentreSearch` runs a single request and parses a summary showing availability at the target centre plus nearby centres. Matches drill straight into the calendar; otherwise the script self-cycles on the search page.
+
+The older date-focused flow remains available as a manual path: if a user clicks the date-time "Change" link (`#date-time-change`) themselves, the script handles the resulting pages (`handleTestDateChoice` then `handleCalendar`) exactly as before. Only the *automatic* trigger has changed.
+
+Reasons:
+- The centre-search response shows multiple centres' availability per request, so `ALERT_ANY_CENTRE` becomes meaningful.
+- One request per cycle instead of a full calendar walk: lighter load, lower bot-detection signal.
+- Per-cycle navigation stays on the search page rather than reloading `/manage` each time.
+- The script only drills into a calendar when a match is actually found, rather than always loading one.
+
+### Monitoring
+- Randomised refresh cycles (5–60 min, default 7–12) with human-pacing jitter
+- Date-window matching with weekend exclusion toggle
+- Instructor-unavailable-date filter
+- Walk-backwards through earlier dates each cycle to extend search beyond the loaded month
+- Self-recovery from session expiry (manual prompt or auto-login)
+
+### Alerts
+- Red banner overlay + browser/OS notification + audio chime + tab-title flash
+- "Show me" jump-to-slot button on the floating cluster
+- Test alert mode for verifying alerts work before relying on them
+- Hammer-protection on the test-alert button (cancellable mid-burst)
+
+### Auto-book (opt-in)
+- Auto-clicks date → time → Warning! Continue, stops on the Confirm changes page
+- 15-minute slot-hold countdown with yellow highlight on the Confirm button
+- Forced off in Test mode; refuses to ever click Confirm or Abandon
+- One-time informed-consent modal fires before auto-book can be enabled: explains exactly what auto-book does, points to the disclaimer's auto-book waiver (§8), and requires explicit "I understand" before the feature activates
+- Consent acknowledgement is stored as an ISO timestamp in localStorage and surfaced in the self-test diagnostic for audit purposes
+- Save-time guard catches users who already had auto-book on from before the consent flow existed
+- Wizard's auto-book step counts as implicit acknowledgement (the welcome step covers disclaimer acceptance), so wizard users aren't prompted twice
+
+### Settings panel
+- In-page panel, no code editing required for day-to-day use
+- Live field validation with red error rings
+- Searchable test-centre dropdown (~330 UK centres bundled, self-healing from real DVSA H1)
+- Instructor-date picker with pill UI + bulk paste mode
+- Live "What you're monitoring" preview with stacked-bar breakdown
+- Health snapshot card (notifications/audio/last scan/auto-login status)
+- Pause/resume from the floating cluster
+
+### Scan history
+- Persistent log of every match, nearby alert, and spotted date
+- KPI tile grid (scans, matches, nearby, spotted, find rate, last 7 days, avg lead, last spotted)
+- Filter by finding type + group-duplicates toggle
+- CSV export with sighting + total-sightings columns for duplicate analysis
+- Copy-to-clipboard + clear history
+
+### Quality of life
+- Monoline inline-SVG icons across all section headers and cluster buttons (no OS emoji drift)
+- Floating status pill with live countdown + cycle count
+- "Alert on any centre" toggle for informational non-target-centre alerts
+- Test-centre mismatch detection (intervention alert if wrong centre loads)
+- Layout-broken detection (intervention alert if DVSA changes selectors)
+- Manual-trigger mode for active monitoring without auto-clicking
+- Console API: `dvsaWatcher.history()`, `dvsaWatcher.clear()`, etc.
+- Privacy reassurance strip in the settings panel footer
+- 100% local, no analytics, no telemetry, no external calls beyond DVSA itself
+
+### Keyboard shortcuts
+- `S`, toggle settings panel
+- `P`, pause/resume monitoring
+- `H`, toggle scan history modal
+- `Esc`, close any open modal
+- Ignores keypresses inside inputs and when any modifier is held (so browser shortcuts like Cmd+S aren't hijacked)
+- Visible hint row in the settings panel showing all four shortcuts
+
+### Credential privacy
+- Driving licence and booking reference inputs are masked (`type="password"`) by default
+- Eye-icon reveal toggle per input, flips to plaintext for verification
+- Defaults back to masked every time the settings panel reopens
+- `autocomplete="off"` so browsers don't prompt to save the values
+
+### Backup & restore
+- Export panel config to a downloadable JSON file (`dvsa-watcher-config-YYYY-MM-DD.json`)
+- Optional checkbox: *Include auto-login credentials* (default **off** for safety when sharing)
+- Restore from a JSON file with strict validation:
+  - Rejects files missing the `_meta.source` marker
+  - Rejects any unknown settings keys (no arbitrary localStorage writes)
+  - Rejects type mismatches (e.g. string where a number is expected)
+- Restore shows a confirm dialog with a summary of the settings before applying
+- Restore merges with current config, missing keys keep their existing values
+
+### Legal and terms
+
+Hardened legal posture across the project ahead of public release:
+
+- **Acceptable Use Policy** added as DISCLAIMER §3, defining permitted use (individual, own booking, UK jurisdiction, own credentials) and prohibited use (on behalf of others, multiple accounts, commercial use of any kind, malicious or unlawful purposes, headless or automation-framework wrapping, use outside the UK)
+- **Distribution, Modification and Forks** added as DISCLAIMER §4, asking forks and derivatives to remain non-commercial and clearly distinguished from the original, and giving users the canonical install URL plus instructions for verifying authenticity
+- **Project Philosophy** added as DISCLAIMER §5, stating that the script is and will remain free for genuine individual users, that source remains visible, and that the project exists to help individuals rather than to be commercialised
+- **User Responsibilities** (DISCLAIMER §8) expanded with eligibility, own-booking-only use, authenticity verification, and acceptance of project lifecycle
+- **Indemnification** (DISCLAIMER §14) broadened to cover breaches of the Acceptable Use Policy and the Distribution rules
+- **Modifications, Discontinuation, and Changes to these Terms** (DISCLAIMER §15) reorganised to explicitly cover script discontinuation
+- Prominent **Permitted and prohibited use** callout added near the top of the README with cross-references to the new DISCLAIMER sections
+- All cross-references between docs updated for the new section numbering (auto-book waiver is now §11)
+
+### Style
+
+- All em dashes removed from documentation and the script, replaced with commas, colons, or sentence breaks depending on context
+- Colour emojis removed from documentation and user-facing strings (the wizard, consent modal, status pill, credit footer). The script's existing monoline SVG icons (date, centre, clock, lock, etc.) remain in place. Monochrome text glyphs (`✓`, `⚠`, `✗`, `○`) are retained because they read as icons rather than emoji in most fonts.
+- README's three top-level callouts (disclaimer warning, existing-bookings-only, permitted use) converted to GitHub native alert syntax (`[!WARNING]`, `[!IMPORTANT]`, `[!CAUTION]`) for proper coloured callout boxes
+- MIT licence ([LICENSE](LICENSE)) with a brief disclaimer summary
+- Comprehensive disclaimer and limitation of liability ([DISCLAIMER.md](DISCLAIMER.md)) covering: no affiliation with DVSA / UK Gov, **explicit scope-of-operation clause (existing bookings only, does not book new tests)**, "as is" no-warranty, no-liability for missed slots or account issues, user responsibilities, no guarantees, assumption of risk, auto-book-specific waiver, indemnification, governing law (England and Wales)
+- Acceptance prompt in the README's install steps
+- Prominent "for existing bookings only" callout near the top of the README, with matching language in the wizard welcome screen, FAQ, and userscript `@description`
+
+### First-run setup wizard
+- 5-step guided onboarding for new users (Welcome / Date window / Test centre / Instructor dates / Final options)
+- Fires automatically the first time the script loads with invalid or placeholder config
+- Progress dots, Back / Skip / Next / Finish navigation
+- Live monitoring preview on the date-window step
+- Native datalist combobox for the test centre (search across 356 bundled UK centres)
+- Pill UI for instructor unavailable dates (skippable)
+- Optional auto-book opt-in and auto-login fields on the final step
+- Summary recap before Finish
+- "Use the full settings panel instead →" escape hatch on every step
+- Disclaimer acceptance prompt on the welcome step
+- `localStorage` flag (`dvsaWatcher.wizardCompleted`) prevents the wizard from re-firing once completed or explicitly skipped
+
+### Self-test diagnostic
+- One-click diagnostic in the About section that probes: script version, environment, Tampermonkey presence, notification permission, audio context state, localStorage writability, panel config presence, cycles + findings counts, configuration validity, and DVSA selector presence on the current page
+- Output formatted as plain text with `✓` / `⚠` / `✗` / `○` glyphs
+- Copy-to-clipboard button for pasting straight into bug reports
+- Re-run button for after-fix verification
+
+### About pane in settings
+- Script version, license, author shown prominently
+- Links to GitHub repo, CHANGELOG, DISCLAIMER, Report issue
+- "Check for updates" instructions for Tampermonkey users
+- Inline "Run self-test diagnostic" button
+- Inline "Re-run setup wizard" button, walk through the wizard again with current values pre-filled (cancelling mid-wizard preserves existing config)
+
+### Tab-focus indicator
+- 5th Health card tile shows current tab focus state
+- Tracks `visibilitychange` events: warns the user if the tab has been backgrounded recently, since browsers throttle `setTimeout` in inactive tabs and may delay scan cycles
+- Health grid uses `auto-fit` columns so tiles flow gracefully across panel widths
+
+### Userscript header hardening
+- `@noframes` directive added, prevents the script from accidentally loading in iframes (DevTools panels, OAuth popups, etc.)
+
+### Project infrastructure
+- [SECURITY.md](SECURITY.md), responsible-disclosure policy, scope, timeline
+- [CONTRIBUTING.md](CONTRIBUTING.md), local dev setup, coding conventions, what's welcome / not welcome, PR checklist
+- `.github/workflows/syntax-check.yml`, GitHub Actions workflow that runs `node --check` on every PR touching the public userscript
+- Bug report and feature request issue templates
+
+### Documentation
+- Expanded README with a Quick Start TL;DR at the top
+- Comprehensive Troubleshooting section (notifications, audio, Error 15, layout-broken, centre mismatch, missing cluster, validation errors)
+- FAQ covering legality, test types, mobile, multi-tab, updates, manual-confirm rationale, config sharing, restore-to-different-browser, site changes, headless / server-side scanning, telemetry/privacy
+
+[1.0.0]: https://github.com/alchemycharlie/dvsa-earlier-slot-watcher/releases/tag/v1.0.0

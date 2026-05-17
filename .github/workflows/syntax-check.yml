@@ -1,0 +1,36 @@
+name: Syntax check
+
+# Runs `node --check` on the public userscript whenever it's changed.
+# Catches accidental parse breaks before merge. No build, no install — just
+# verifies the file is valid JavaScript.
+
+on:
+  pull_request:
+    paths:
+      - 'dvsa-slot-watcher.user.js'
+      - '.github/workflows/syntax-check.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'dvsa-slot-watcher.user.js'
+
+jobs:
+  syntax:
+    name: Parse check
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Parse-check the public userscript
+        run: node --check dvsa-slot-watcher.user.js
+
+      - name: Report
+        if: success()
+        run: echo "dvsa-slot-watcher.user.js parses cleanly."

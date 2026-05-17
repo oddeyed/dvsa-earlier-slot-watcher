@@ -1,0 +1,58 @@
+MIT License
+
+Copyright (c) 2026 alchemycharlie
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+================================================================================
+
+DISCLAIMER (SUMMARY)
+
+This Software is an independent, unofficial tool. It is not affiliated with,
+endorsed by, sponsored by, or in any way connected to the Driver and Vehicle
+Standards Agency (DVSA), the UK Government, gov.uk, the DVLA, or any test
+centre, instructor, or instructor-association.
+
+The Software operates only on the DVSA "Change your test" management flow
+(/manage* and /login* URLs). It is for users who already hold a confirmed
+DVSA practical driving test booking and want to find an earlier cancellation
+slot at the same test centre to reschedule to. It does NOT book new tests,
+skip the DVSA application or payment flow, or operate on any other DVSA URL.
+
+The Software automates actions you would otherwise take manually on this
+management flow using your own login. You are responsible for ensuring your
+use of the Software complies with the DVSA's terms and conditions, your
+local laws, and any restrictions on test rebooking that may apply to your
+account. You are responsible for verifying every booking detail before
+committing it.
+
+The Software is provided "AS IS" and "AS AVAILABLE" without warranty of any
+kind, express or implied. To the maximum extent permitted by law, the author
+disclaims all liability for any direct, indirect, incidental, special,
+consequential, exemplary, or punitive damages arising from your use of, or
+inability to use, the Software, including but not limited to lost test
+slots, account suspensions, incorrect bookings, missed notifications, and
+costs of substitute services.
+
+By installing, copying, modifying, or using the Software you accept these
+terms in full. If you do not accept them, do not install or use the Software.
+
+The full, binding disclaimer, including assumption of risk, indemnification,
+governing law (England and Wales), and the auto-book-specific waiver,is in
+DISCLAIMER.md in this repository. The summary above does not replace it.

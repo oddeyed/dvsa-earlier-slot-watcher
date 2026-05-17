@@ -1,0 +1,7 @@
+# GitHub sponsor button config.
+# Each entry produces a button on the repo's homepage and on every PR/Issue.
+# See: https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/displaying-a-sponsor-button-in-your-repository
+
+# Buy Me a Coffee — username is the bit after the slash on the URL.
+# e.g. https://buymeacoffee.com/charlie.martina  →  charlie.martina
+custom: ["https://buymeacoffee.com/charlie.martina"]

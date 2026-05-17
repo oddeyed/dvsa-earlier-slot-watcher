@@ -1,0 +1,64 @@
+# =============================================================================
+#  DVSA Earlier Slot Watcher — .gitignore
+# =============================================================================
+#
+#  CRITICAL: any file matching *.personal.user.js MUST stay local. These files
+#  may contain a driving licence number, booking reference, target test centre,
+#  date window, instructor's blackout dates, and other personal information.
+#  Never commit them. Anyone publishing this repo who runs the script locally
+#  should keep their config in a *.personal.user.js file.
+#
+# =============================================================================
+
+# Personal / private userscript copies (never commit)
+*.personal.user.js
+*.private.user.js
+*.local.user.js
+
+# Internal planning notes (kept locally — public users don't need to see our backlog)
+ROADMAP.md
+PLANNING.md
+NOTES.md
+TODO.md
+
+# macOS metadata
+.DS_Store
+.AppleDouble
+.LSOverride
+Icon?
+._*
+
+# Editor / IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.project
+.settings/
+.classpath
+
+# AI / coding-assistant tooling (local settings, not for distribution)
+.claude/
+.cursor/
+.aider*
+.continue/
+
+# Logs & temp
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+*.tmp
+*.bak
+*.orig
+
+# Node (only if you ever add tooling later)
+node_modules/
+package-lock.json
+yarn.lock
+
+# Output / build artefacts
+dist/
+build/
+*.min.js
