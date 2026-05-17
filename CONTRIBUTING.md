@@ -40,7 +40,7 @@ This is a userscript, not a SPA, keep it simple:
 - **No external network calls.** This is a hard rule. The script must not load fonts, icons, analytics, or anything else over the network beyond DVSA's own site. Inline SVGs, inline CSS, no CDNs.
 - **CSS classes are `dvsa-` prefixed**, no chance of colliding with DVSA's own stylesheet.
 - **No `eval`, no `new Function`**, both for security and because Tampermonkey's `unsafeWindow` access requires care.
-- **Comments matter.** Explain *why*, particularly for anything that interacts with DVSA's quirks (Spring WebFlow URLs, Imperva pacing, body IDs, etc.). The next maintainer will thank you.
+- **Comments matter.** Explain *why*, particularly for anything that interacts with DVSA's quirks (Spring WebFlow URLs, cycle pacing, body IDs, etc.). The next maintainer will thank you.
 - **Match existing patterns.** The script has consistent patterns for things like rendering panel sections, wiring handlers, status pill updates, and finding storage. New code should look like existing code.
 - **Personal data must never appear in the public file.** Don't commit licence numbers, booking refs, real test centres in your config, dates from your booking, etc. Your config lives in the browser's `localStorage`, set it up via the in-page settings panel after install, or import a JSON config.
 

@@ -1,7 +1,7 @@
 name: Syntax check
 
 # Runs `node --check` on the public userscript whenever it's changed.
-# Catches accidental parse breaks before merge. No build, no install — just
+# Catches accidental parse breaks before merge. No build, no install, just
 # verifies the file is valid JavaScript.
 
 on:

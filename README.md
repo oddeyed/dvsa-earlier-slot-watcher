@@ -2,7 +2,7 @@
 
 A Tampermonkey userscript for UK learner drivers with an **existing DVSA practical driving test booking**. Watches the "Change your test" page for earlier cancellation slots at your test centre, alerts when one appears in your accepted date window, and can optionally auto-reschedule up to DVSA's final confirmation step.
 
-**Does not book new tests** — you must already have a confirmed booking.
+**Does not book new tests**, you must already have a confirmed booking.
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Version](https://img.shields.io/github/v/tag/alchemycharlie/dvsa-earlier-slot-watcher?label=version&color=brightgreen)](CHANGELOG.md)
@@ -25,9 +25,9 @@ For users with an existing DVSA test booking who want to reschedule earlier:
 - **Monitors** the "Change your test" page on a randomised 7-12 minute cycle (configurable 5-60).
 - **Filters** by date window, weekends, and your instructor's unavailable dates.
 - **Alerts** four ways at once: red banner, browser notification, audio chime, tab-title flash.
-- **Auto-books (opt-in)** through to DVSA's "Confirm changes" page — the final commit stays manual.
+- **Auto-books (opt-in)** through to DVSA's "Confirm changes" page, the final commit stays manual.
 - **Logs every finding** to local browser storage. Filter, group, export to CSV.
-- **Stays 100% local** — no analytics, no telemetry, no external network calls beyond DVSA itself.
+- **Stays 100% local**, no analytics, no telemetry, no external network calls beyond DVSA itself.
 
 <p align="center">
   <img src="docs/screenshots/settings-panel.png" alt="The settings panel showing the Health card, Date window, monitoring preview, test centre dropdown, refresh interval, and other configuration options" width="720">
@@ -136,7 +136,7 @@ Tampermonkey opens its install screen. Click **Install**. It'll auto-update from
 
 The **Allow User Scripts** toggle isn't on. See [step 2 of Install](#2-chromium-browsers-enable-allow-user-scripts).
 
-Then reload the DVSA tab — the floating pill and gear should appear bottom-right.
+Then reload the DVSA tab, the floating pill and gear should appear bottom-right.
 
 Firefox users: this isn't required. Check the script is enabled in Tampermonkey's dashboard.
 
@@ -144,9 +144,9 @@ Firefox users: this isn't required. Check the script is enabled in Tampermonkey'
 
 Most likely:
 
-1. **Permission denied** — Settings → Health card → Notifications. If "Denied", re-grant in your browser's site settings (padlock icon).
-2. **Focus/DND mode** — macOS Focus, Windows Focus Assist, and Do Not Disturb modes swallow notifications. Whitelist the browser or disable.
-3. **Notifications unsupported** — locked-down browsers or in-app webviews. Use a desktop browser.
+1. **Permission denied**, Settings → Health card → Notifications. If "Denied", re-grant in your browser's site settings (padlock icon).
+2. **Focus/DND mode**, macOS Focus, Windows Focus Assist, and Do Not Disturb modes swallow notifications. Whitelist the browser or disable.
+3. **Notifications unsupported**, locked-down browsers or in-app webviews. Use a desktop browser.
 
 ### Audio chime isn't playing
 
@@ -185,8 +185,8 @@ DVSA changed page structure. The script bails rather than clicking the wrong thi
 
 The H1 on the DVSA calendar page doesn't match your configured centre. Either:
 
-- You typed the name slightly differently — open settings, pick from the dropdown.
-- DVSA renamed the centre — pick from the dropdown again.
+- You typed the name slightly differently, open settings, pick from the dropdown.
+- DVSA renamed the centre, pick from the dropdown again.
 - You navigated to the wrong centre via DVSA's own search.
 
 <p align="center">
@@ -197,9 +197,9 @@ The H1 on the DVSA calendar page doesn't match your configured centre. Either:
 
 Possible blockers:
 
-- A browser extension overlay (translator, password manager) at the same position — toggle extensions.
-- Zoom above 200% — the cluster may be off-screen. Zoom back.
-- Ancestor CSS transform in DVSA's markup (rare — the cluster uses a single container to dodge this).
+- A browser extension overlay (translator, password manager) at the same position, toggle extensions.
+- Zoom above 200%, the cluster may be off-screen. Zoom back.
+- Ancestor CSS transform in DVSA's markup (rare, the cluster uses a single container to dodge this).
 
 ### Status pill says "configure to start" but values are filled in
 
@@ -227,7 +227,7 @@ No. It only operates inside DVSA's "Change your test" management flow (`/manage*
 The script automates clicks you'd otherwise make manually on the management section of DVSA's site, using your own login, for your own booking. Whether your specific use complies with DVSA's terms is your responsibility. See [DISCLAIMER.md](DISCLAIMER.md). Seek independent legal advice if unsure.
 
 **Will it work for HGV, motorcycle, or other test types?**
-No — the script's `@match` rules target the car practical flow only (`driverpracticaltest.dvsa.gov.uk/manage*`). Other test types use different subdomains and pages. Contributions welcome.
+No, the script's `@match` rules target the car practical flow only (`driverpracticaltest.dvsa.gov.uk/manage*`). Other test types use different subdomains and pages. Contributions welcome.
 
 **Does it work on mobile?**
 Mobile is untested and unsupported. The UI is sized for desktop.

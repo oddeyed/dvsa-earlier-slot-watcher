@@ -2,7 +2,7 @@
 
 How the DVSA Earlier Slot Watcher behaves around DVSA's security and protection layer.
 
-This document is for people who want to understand exactly what the script does and does not do when it encounters CAPTCHAs, rate limits, page-structure changes, or other security-related responses from DVSA's website. The short canonical statement of intent lives in [DISCLAIMER §5.6](../DISCLAIMER.md#5-project-philosophy); this is the longer-form treatment.
+This document is for people who want to understand exactly what the script does and does not do when it encounters CAPTCHAs, rate limits, page-structure changes, or other security-related responses from DVSA's website. The short canonical statement of intent lives in [DISCLAIMER §5.6](../DISCLAIMER.md#56-no-circumvention-of-dvsa-security-measures); this is the longer-form treatment.
 
 ---
 
@@ -66,7 +66,7 @@ The user's appropriate response is the same as a human's: wait it out, then resu
 
 If DVSA changes the markup of a page the script monitors (CSS classes, element IDs, structure of the calendar grid, etc.), the script's selector-resilience checks fire a "layout broken" intervention banner. The script does not guess. It does not attempt to click neighbouring elements in the hope that one of them is the right one. It does not fall back to mouse-coordinate clicks or scraped-text matching. It halts cleanly and asks the user to file an issue against the project so a proper fix can be released.
 
-The same principle applies when the configured test centre does not match the centre rendered on the calendar page (the "test centre mismatch" intervention) — the script refuses to act on ambiguous state.
+The same principle applies when the configured test centre does not match the centre rendered on the calendar page (the "test centre mismatch" intervention), the script refuses to act on ambiguous state.
 
 ### Session expiry
 
@@ -84,7 +84,7 @@ Auto-login uses DVSA's own published login form. It does not reuse session token
 
 The script's monitoring cycle is randomised between 7 and 12 minutes by default, configurable up to 60 minutes. The minimum allowed interval in the settings panel is 5 minutes.
 
-This pacing is set specifically to fall comfortably within DVSA's expected use patterns. It is comparable to a person manually checking the page periodically throughout the day. The randomisation exists for the same reason a human's refresh cadence is irregular — a person does not refresh on an exact schedule.
+This pacing is set specifically to fall comfortably within DVSA's expected use patterns. It is comparable to a person manually checking the page periodically throughout the day. The randomisation exists for the same reason a human's refresh cadence is irregular, a person does not refresh on an exact schedule.
 
 The pacing is not chosen to evade detection. It is chosen to keep the script's behaviour proportionate to its purpose: a person who would otherwise be refreshing the page every few minutes anyway, automating that exact task and nothing more.
 
@@ -116,6 +116,7 @@ For security vulnerabilities in the project itself (e.g. ways an attacker could 
 ## Related
 
 - [DISCLAIMER §2: Scope of Operation: Existing Bookings Only](../DISCLAIMER.md#2-scope-of-operation-existing-bookings-only)
-- [DISCLAIMER §5: Project Philosophy](../DISCLAIMER.md#5-project-philosophy) (canonical short statement at §5.6)
+- [DISCLAIMER §5: Project Philosophy](../DISCLAIMER.md#5-project-philosophy)
+- [DISCLAIMER §5.6: No Circumvention of DVSA Security Measures](../DISCLAIMER.md#56-no-circumvention-of-dvsa-security-measures) (canonical short statement)
 - [README: Before you install](../README.md#before-you-install)
-- [SECURITY.md](../SECURITY.md) — vulnerability disclosure for the project itself
+- [SECURITY.md](../SECURITY.md), vulnerability disclosure for the project itself
