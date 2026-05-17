@@ -6,6 +6,21 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and thi
 
 ---
 
+## [1.0.5], 2026-05-17
+
+### Fixed
+
+- **Settings panel footer buttons now sit on a single row.** The default button padding made the five footer buttons (Reset to defaults, View scan history, Test alert, Cancel, Save and reload) just barely too wide for the 720px panel, so the right-side group wrapped to a second row. Tightened the footer-specific padding and font size by a single step so all five fit on one line. The outer flex-wrap remains intact so it still degrades gracefully on very narrow viewports.
+- **Scan history footer no longer falls below the viewport.** The history panel's action buttons (Export CSV, Copy to clipboard, Clear all, Close) could fall below the visible area on shorter windows, requiring a scroll to reach. The panel is now a proper flex-column modal: header (title, KPI grid, filter buttons) holds its natural size at the top; the table region expands to fill the remaining vertical space and scrolls inside its own container; the footer is anchored to the bottom of the visible panel regardless of viewport size or how many history rows exist.
+
+### Changed
+
+- **Scan history capacity raised from 200 to 1,000 entries.** At ~180 bytes per entry, 1,000 entries is ~180KB of localStorage (well within the per-origin 5-10MB limit) and the flex/scroll layout handles the row count without performance issues. At a 7-12 minute cycle, 1,000 entries covers roughly 5-8 days of continuous monitoring before FIFO eviction kicks in. A new hint line in the history panel surfaces the cap to users and points them at **Export CSV** for keeping a permanent record beyond that window.
+
+[1.0.5]: https://github.com/alchemycharlie/dvsa-earlier-slot-watcher/releases/tag/v1.0.5
+
+---
+
 ## [1.0.4], 2026-05-17
 
 ### Changed

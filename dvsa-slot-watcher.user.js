@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         DVSA Earlier Slot Watcher
 // @namespace    https://github.com/alchemycharlie/dvsa-earlier-slot-watcher
-// @version      1.0.4
+// @version      1.0.5
 // @description  For UK learner drivers with an existing DVSA practical driving test booking. Watches the "Change your test" calendar for an earlier cancellation slot at your chosen test centre, alerts you the moment one appears in your target date window, and can optionally auto-reschedule up to the final confirmation page. Does NOT book new tests, you must already have a booking.
 // @author       alchemycharlie
 // @homepageURL  https://github.com/alchemycharlie/dvsa-earlier-slot-watcher
@@ -22,7 +22,7 @@
     // Script version. Kept in sync with the @version line in the userscript
     // header at the top of this file. Surfaced in the About pane of the
     // settings panel and in the self-test diagnostic output for bug reports.
-    const SCRIPT_VERSION = '1.0.4';
+    const SCRIPT_VERSION = '1.0.5';
 
     // Tab-focus tracking. Browsers throttle setTimeout (and other timers) when
     // a tab is in the background, which can stretch the script's refresh
