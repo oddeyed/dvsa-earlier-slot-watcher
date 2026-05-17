@@ -6,6 +6,16 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and thi
 
 ---
 
+## [Unreleased]
+
+### Documentation
+
+- README install steps now include an explicit "Chrome / Edge / Brave: enable Allow User Scripts" step between installing Tampermonkey and installing the script. This catches a common Chromium-only gotcha where Tampermonkey can install the script but won't actually run it until the user toggles "Allow User Scripts" in the extension's Details page. Firefox is unaffected.
+- New troubleshooting entry covering the "I installed the script but nothing happens" symptom that this Chromium quirk causes, with a direct fix.
+- Both sections link to the official Tampermonkey FAQ Q209 for canonical guidance.
+
+---
+
 ## [1.0.0], 2026-05-17
 
 Initial public release.

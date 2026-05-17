@@ -124,7 +124,25 @@ For users with an existing DVSA test booking who want to reschedule to an earlie
 - [Firefox](https://addons.mozilla.org/firefox/addon/tampermonkey/)
 - [Safari (paid)](https://apps.apple.com/app/tampermonkey/id1482490089)
 
-### 2. Install the script
+### 2. Chrome / Edge / Brave / other Chromium browsers: enable "Allow User Scripts"
+
+> [!IMPORTANT]
+> Since Chrome's Manifest V3 enforcement tightened, Chromium-based browsers require you to **explicitly opt in to running userscripts**. Without this step, Tampermonkey can install the script but won't actually run it on DVSA pages, so nothing will happen and you'll wonder why.
+
+1. In your browser, go to the extensions page:
+   - Chrome: `chrome://extensions/`
+   - Edge: `edge://extensions/`
+   - Brave: `brave://extensions/`
+   - Opera / other Chromium: equivalent `<browser>://extensions/`
+2. In the **top-right corner** of that page, toggle **Developer mode** ON.
+3. Find **Tampermonkey** in the list and click its **Details** button.
+4. Scroll down and toggle **Allow User Scripts** ON.
+
+Official Tampermonkey guidance for this step: <https://www.tampermonkey.net/faq.php?q=Q209>.
+
+**Firefox users**: skip this step entirely. Tampermonkey on Firefox runs userscripts without needing additional permissions.
+
+### 3. Install the script
 
 Click this link in a browser with Tampermonkey installed:
 
@@ -134,7 +152,7 @@ Tampermonkey will open its install screen, click **Install**.
 
 Once installed, it'll auto-update from this same URL whenever a new version is released.
 
-### 3. Configure
+### 4. Configure
 
 1. Open your DVSA test booking change page: <https://driverpracticaltest.dvsa.gov.uk/manage>
 2. Log in to find your current test
@@ -156,6 +174,23 @@ Once installed, it'll auto-update from this same URL whenever a new version is r
 ---
 
 ## Troubleshooting
+
+### "I installed the script but nothing happens on the DVSA page" (Chromium browsers)
+
+Almost always the **Allow User Scripts** toggle in Tampermonkey's extension settings hasn't been enabled. Chrome, Edge, Brave, Opera, and other Chromium-based browsers require this since Manifest V3 enforcement tightened.
+
+Fix:
+
+1. Go to your browser's extensions page (`chrome://extensions/`, `edge://extensions/`, etc.)
+2. Toggle **Developer mode** ON (top-right of that page)
+3. Click **Details** on the Tampermonkey card
+4. Toggle **Allow User Scripts** ON
+
+Then reload your DVSA tab and the floating pill + gear icon should appear in the bottom-right corner.
+
+Tampermonkey's own page on this: <https://www.tampermonkey.net/faq.php?q=Q209>.
+
+Firefox users: this isn't required, you have a different issue. Check that the script is enabled in Tampermonkey's dashboard.
 
 ### "Notifications aren't firing"
 
