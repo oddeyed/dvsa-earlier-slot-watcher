@@ -162,16 +162,37 @@ Once installed, it'll auto-update from this same URL whenever a new version is r
 
 1. Open your DVSA test booking change page: <https://driverpracticaltest.dvsa.gov.uk/manage>
 2. Log in to find your current test
-3. You'll see a small **status pill** and **gear icon** in the bottom-right corner, click the gear
-4. Fill in:
+3. **First-time users**: a 5-step setup wizard appears automatically. Walk through it. **Returning users**: click the **gear icon** in the bottom-right to reopen the full settings panel any time.
+4. Fill in (via wizard or panel):
    - **Date window**, earliest + latest dates you'd accept
    - **Test centre**, pick from the searchable dropdown (~330 UK centres bundled)
    - **Search term**, your postcode or centre name (whatever finds your centre in DVSA's search results)
    - **Instructor unavailable dates**, paste or pick the dates your instructor can't do
    - **Auto-book** (optional), opt in if you trust the script to click through automatically
    - **Auto-login** (optional), paste your licence number + booking ref to recover from session expiry without manual intervention
-5. Click **Save and reload**
+5. Click **Save and reload** (or **Finish setup** in the wizard)
 6. Leave the tab open in a corner of your screen, the script does the rest
+
+<p align="center"><strong>What the first-run setup wizard looks like</strong></p>
+
+<table align="center">
+  <tr>
+    <td align="center" valign="top" width="33%">
+      <img src="docs/screenshots/wizard-welcome.png" alt="Wizard step 1: Welcome screen with prerequisite reminder and disclaimer acceptance" width="280">
+      <br><em>Step 1: Welcome &amp; disclaimer</em>
+    </td>
+    <td align="center" valign="top" width="33%">
+      <img src="docs/screenshots/wizard-test-by-range.png" alt="Wizard step 2: Date window picker with live preview showing how many dates would alert" width="280">
+      <br><em>Step 2: Date window with live preview</em>
+    </td>
+    <td align="center" valign="top" width="33%">
+      <img src="docs/screenshots/wizard-test-centre.png" alt="Wizard step 3: Test centre dropdown with search and search term field" width="280">
+      <br><em>Step 3: Test centre + search term</em>
+    </td>
+  </tr>
+</table>
+
+<p align="center"><em>Steps 4 and 5 cover instructor dates and final options (refresh interval, auto-book opt-in, auto-login). Both are skippable.</em></p>
 
 > By completing installation and saving any configuration, you confirm that you have read and accepted the terms in [DISCLAIMER.md](DISCLAIMER.md).
 
@@ -228,11 +249,33 @@ If audio is still silent: check your browser's site-level audio permission, syst
 
 ### "Error 15" / Temporary block from DVSA
 
-DVSA's Imperva bot protection has flagged your IP. This usually clears in **1–2 hours** without intervention. To reduce the chance of it happening again:
+DVSA's Imperva bot protection has flagged your IP. The script detects this and surfaces a red intervention banner so you know to stop scanning. The block usually clears in **1–2 hours** without intervention. To reduce the chance of it happening again:
 
 - Increase the refresh interval in the settings panel (the default 7–12 min is comfortably human-paced; faster is asking for trouble)
 - Don't run multiple instances of the script across multiple tabs / browsers / devices simultaneously
 - Avoid mashing the **Test alert** button to verify things work, that doesn't trigger Imperva, but it's a sign you might be over-refreshing
+
+<p align="center">
+  <img src="docs/screenshots/error-15-lockout-detection.png" alt="The red intervention banner that appears when the script detects DVSA's Imperva temporary block (Error 15)" width="720">
+  <br>
+  <em>What the Error 15 intervention banner looks like. Scanning pauses safely until the block clears and you reload the tab.</em>
+</p>
+
+### "Imperva captcha appeared" intervention
+
+DVSA's bot-detection layer (Imperva) occasionally challenges visitors with a captcha rather than a hard temporary block. The script detects this and pauses safely instead of trying to click through a captcha page.
+
+What to do:
+
+1. Solve the captcha on the DVSA page yourself
+2. Once you're back on the booking pages, the script's next refresh cycle will resume monitoring automatically
+3. If captchas keep appearing every cycle, your IP may be under heavier Imperva scrutiny. Increase the refresh interval to 15–30 min and wait a few hours before resuming. Persistent captchas often clear by themselves once your traffic pattern looks more human
+
+<p align="center">
+  <img src="docs/screenshots/captcha-detection.png" alt="The intervention banner that appears when the script detects an Imperva captcha challenge in the DVSA page" width="720">
+  <br>
+  <em>Captcha-detection intervention. The script doesn't try to solve captchas, that's a cat-and-mouse game we deliberately don't play.</em>
+</p>
 
 ### "Layout broken" intervention alert
 
@@ -248,6 +291,12 @@ The H1 on the DVSA calendar page doesn't contain the centre name you configured.
 - You typed the centre name slightly differently, open settings, check the dropdown for the exact official wording
 - DVSA renamed the centre, pick from the dropdown again (the new name will be auto-discovered after one cycle if not bundled)
 - You navigated to the wrong centre via DVSA's own search
+
+<p align="center">
+  <img src="docs/screenshots/centre-mismatch.png" alt="The intervention banner shown when the centre name on the DVSA page doesn't match the one configured in the script" width="720">
+  <br>
+  <em>Centre-mismatch intervention. Scanning pauses so the script doesn't accidentally book at the wrong test centre.</em>
+</p>
 
 ### "I can't see the floating cluster (status pill + gear)"
 
