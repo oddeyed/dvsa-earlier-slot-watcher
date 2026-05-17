@@ -134,11 +134,13 @@
     };
 
     // ---- Findings log (persisted to localStorage for verification & history) ----
-    // STORAGE_MAX caps the array length. At ~180 bytes per entry, 400 entries
-    // is ~72KB of localStorage, well within the per-origin 5-10MB limit. Older
-    // entries are evicted FIFO once the cap is hit.
+    // STORAGE_MAX caps the array length. At ~180 bytes per entry, 1000 entries
+    // is ~180KB of localStorage, well within the per-origin 5-10MB limit. Older
+    // entries are evicted FIFO once the cap is hit. The history panel surfaces
+    // the cap to the user so they know to export to CSV if they want a
+    // permanent record beyond the most recent 1000 findings.
     const STORAGE_KEY = 'dvsa-watcher-findings';
-    const STORAGE_MAX = 400;
+    const STORAGE_MAX = 1000;
     const CYCLES_KEY  = 'dvsa-watcher-cycles';
 
     function recordCycle() {
@@ -4824,7 +4826,7 @@
             <h2 style="margin:0 0 16px;font-size:20px;flex-shrink:0;">Scan history</h2>
             ${statsBlock}
             ${filterRow}
-            <div style="border:1px solid #b1b4b6;border-radius:4px;overflow:hidden;margin:0 0 16px;flex:1 1 auto;min-height:120px;overflow-y:auto;">
+            <div style="border:1px solid #b1b4b6;border-radius:4px;overflow:hidden;margin:0 0 8px;flex:1 1 auto;min-height:120px;overflow-y:auto;">
                 <table style="width:100%;border-collapse:collapse;">
                     <thead>
                         <tr style="background:#f3f2f1;font-size:11px;text-transform:uppercase;color:#505a5f;letter-spacing:0.3px;">
@@ -4837,6 +4839,9 @@
                     <tbody>${rowsHtml}</tbody>
                 </table>
             </div>
+            <p style="margin:0 0 10px;font-size:11px;color:#505a5f;text-align:center;flex-shrink:0;">
+                History is capped at the most recent ${STORAGE_MAX.toLocaleString()} entries; older ones are removed as new findings come in. Use <strong>Export CSV</strong> to keep a permanent record.
+            </p>
             <div style="display:flex;gap:8px;justify-content:space-between;align-items:center;flex-wrap:wrap;flex-shrink:0;padding-top:12px;border-top:1px solid #f3f2f1;">
                 <div style="display:flex;gap:8px;">
                     <button id="dvsa-hist-export" type="button" style="padding:8px 12px;background:#fff;border:1px solid #b1b4b6;border-radius:4px;cursor:${hasData ? 'pointer' : 'not-allowed'};opacity:${hasData ? '1' : '0.5'};font:14px system-ui,sans-serif;" ${hasData ? '' : 'disabled'}>Export CSV</button>
