@@ -164,6 +164,10 @@ Common causes:
 
 Wait for the block to clear, then resume. Full rationale for how the script behaves here: [docs/SECURITY-POSTURE.md](docs/SECURITY-POSTURE.md#error-15--temporary-rate-limit-block).
 
+<p align="center">
+  <img src="docs/screenshots/error-15-lockout-detection.png" alt="The red intervention banner that appears when the script recognises DVSA's Error 15 response" width="720">
+</p>
+
 ### CAPTCHA appeared
 
 DVSA occasionally presents a CAPTCHA. The script recognises it, pauses, and hands control back. Complete it yourself; the script resumes on the next cycle. If CAPTCHAs appear every cycle, increase the refresh interval to 15-30 min and wait a few hours.
