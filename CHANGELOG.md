@@ -6,6 +6,21 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and thi
 
 ---
 
+## [1.0.2], 2026-05-17
+
+### Fixed
+
+- **Config-export `_meta.version` field is now dynamic.** Previously, exporting your settings to JSON would write a hardcoded `"version": "1.0.0"` regardless of which version of the script was actually running, so exports from a 1.0.1 install mis-identified themselves as 1.0.0 in the file. The export now reads `SCRIPT_VERSION` so the stamp always reflects the install that produced it.
+
+### Changed
+
+- **README version badge is now dynamic.** Switched from a hardcoded shields.io badge to one that auto-queries GitHub for the latest tag. Future version bumps now propagate to the badge without manual README edits.
+- **DISCLAIMER footer no longer carries a software-version stamp.** The disclaimer's terms apply across versions, so tying its footer to a single release number risked drift exactly like this. The date stamp remains so users can still see when terms last changed.
+
+[1.0.2]: https://github.com/alchemycharlie/dvsa-earlier-slot-watcher/releases/tag/v1.0.2
+
+---
+
 ## [1.0.1], 2026-05-17
 
 ### Fixed
