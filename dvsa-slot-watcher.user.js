@@ -4050,7 +4050,7 @@
         const payload = {
             _meta: {
                 source:             'dvsa-watcher',
-                version:            '1.0.0',
+                version:            SCRIPT_VERSION,
                 exportedAt:         new Date().toISOString(),
                 includesCredentials: !!includeCredentials
             },

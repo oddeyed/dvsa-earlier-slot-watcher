@@ -325,4 +325,4 @@ The author makes no commitment to respond to questions, requests for legal advic
 
 ---
 
-*Last updated: 17 May 2026 · Software version 1.0.0*
+*Last updated: 17 May 2026*
