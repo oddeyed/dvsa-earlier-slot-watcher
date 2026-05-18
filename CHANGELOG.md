@@ -6,6 +6,24 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and thi
 
 ---
 
+## [1.0.7], 2026-05-18
+
+### Fixed
+
+- **Wizard incorrectly opened on the Queue-it subdomain (regression from v1.0.6).** When v1.0.6 added the `@match` for `queue.driverpracticaltest.dvsa.gov.uk`, it allowed the script to inject on the queue page, but `localStorage` is keyed **per origin**, and the queue subdomain has its own (empty) localStorage separate from the main `driverpracticaltest.dvsa.gov.uk` origin. The first-run config check would run on the queue origin, find nothing, and launch the setup wizard. Users importing config there ended up writing to the queue origin's localStorage instead of the main origin's, while believing their existing data had been wiped. **The data wasn't wiped**, it remained intact on the main origin, untouched.
+
+  Fixed by moving the Queue-it detection BEFORE the config check in `main()`. On the queue subdomain the script now just shows the queue position and waits: no config check, no wizard, no scanning. When Queue-it redirects back to the main DVSA origin, the existing localStorage is read normally and everything works as before.
+
+  **If you imported config on the queue subdomain in response to the wizard prompt:** your original config and history on `driverpracticaltest.dvsa.gov.uk` are still intact. The duplicate config on `queue.driverpracticaltest.dvsa.gov.uk` is now orphaned and harmless, but you can clear it manually via DevTools → Application → Local Storage → `queue.driverpracticaltest.dvsa.gov.uk` if you want a clean state.
+
+### Added
+
+- **Queue position now shows in the tab title** while you're in DVSA's Queue-it waiting room. Format: `[23,731 ahead] Queue-it`. The number updates live every second as Queue-it refreshes its position. Useful if you've tabbed away, you can see your position in the tab bar without switching to the queue tab.
+
+[1.0.7]: https://github.com/alchemycharlie/dvsa-earlier-slot-watcher/releases/tag/v1.0.7
+
+---
+
 ## [1.0.6], 2026-05-18
 
 ### Added

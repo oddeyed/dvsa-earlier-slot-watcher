@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         DVSA Earlier Slot Watcher
 // @namespace    https://github.com/alchemycharlie/dvsa-earlier-slot-watcher
-// @version      1.0.6
+// @version      1.0.7
 // @description  For UK learner drivers with an existing DVSA practical driving test booking. Watches the "Change your test" calendar for an earlier cancellation slot at your chosen test centre, alerts you the moment one appears in your target date window, and can optionally auto-reschedule up to the final confirmation page. Does NOT book new tests, you must already have a booking.
 // @author       alchemycharlie
 // @homepageURL  https://github.com/alchemycharlie/dvsa-earlier-slot-watcher
@@ -23,7 +23,7 @@
     // Script version. Kept in sync with the @version line in the userscript
     // header at the top of this file. Surfaced in the About pane of the
     // settings panel and in the self-test diagnostic output for bug reports.
-    const SCRIPT_VERSION = '1.0.6';
+    const SCRIPT_VERSION = '1.0.7';
 
     // Tab-focus tracking. Browsers throttle setTimeout (and other timers) when
     // a tab is in the background, which can stretch the script's refresh
@@ -5598,6 +5598,20 @@
         injectControlCluster();
         wireKeyboardShortcuts();
 
+        // Queue-it virtual waiting room: must be checked FIRST, before the config
+        // and pause guards. The queue page lives on queue.driverpracticaltest.dvsa.gov.uk,
+        // a separate origin with its own (empty) localStorage. If we ran the config
+        // check here, it would always fail on the queue subdomain and incorrectly
+        // launch the setup wizard, potentially leading users to import or re-enter
+        // config that ends up orphaned on the queue origin instead of the main
+        // DVSA origin where it actually belongs. By detecting the queue page first,
+        // we just surface the queue position and wait; the user's real config on
+        // driverpracticaltest.dvsa.gov.uk is left completely alone.
+        if (isQueueItPage()) {
+            await handleQueueItPage();
+            return;
+        }
+
         // First-run guard: if config is missing or still on placeholder values,
         // open the setup wizard (for brand-new users) or the settings panel
         // (for returning users who've already seen the wizard but have invalid
@@ -5621,15 +5635,6 @@
         if (isPaused()) {
             log('Monitoring is paused. Click the play button (▶) in the bottom-right cluster to resume.');
             setStatus({ state: 'paused' });
-            return;
-        }
-
-        // Queue-it virtual waiting room: lives on its own subdomain, has no body-ID
-        // matching PAGE_STATE values, and is handled by Queue-it's own auto-redirect.
-        // We just surface the queue position via the status pill and wait. Detection
-        // runs BEFORE the body-ID switch since the queue page doesn't expose page-* IDs.
-        if (isQueueItPage()) {
-            await handleQueueItPage();
             return;
         }
 
