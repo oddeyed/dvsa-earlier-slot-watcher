@@ -5524,10 +5524,12 @@
                 break;
             }
             // Wait for the calendar to update (AJAX render after clicking "Previous available").
-            // DVSA's calendar AJAX typically completes in 100-250ms; this 180-380ms
-            // window leaves a small buffer for slower connections. Going lower risks
-            // reading a stale DOM before the new month has rendered.
-            await new Promise(r => setTimeout(r, 180 + Math.random() * 200));
+            // DVSA's calendar AJAX typically completes in 100-250ms; this 200-400ms
+            // window leaves ~150ms of clear buffer for slower connections, busy CDNs,
+            // and laggy machines. Going lower (e.g. 180ms floor) leaves only ~80ms
+            // of buffer and risks reading a calendar mid-render — months that have
+            // dates would appear empty and the script would walk past them.
+            await new Promise(r => setTimeout(r, 200 + Math.random() * 200));
             // If the click produced the warning, we are done walking
             if (isNoEarlierWarningVisible()) {
                 log('Hit "no earlier tests" warning. End of earlier dates.');
