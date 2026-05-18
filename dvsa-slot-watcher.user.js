@@ -2232,32 +2232,6 @@
             }
             .dvsa-p .dvsa-shortcut-sep { color: #b1b4b6; }
 
-            /* ---- Credit / donate footer at very bottom of settings panel ---- */
-            .dvsa-p .dvsa-credit {
-                margin-top: 14px;
-                padding-top: 12px;
-                border-top: 1px solid #f3f2f1;
-                color: #505a5f;
-                font-size: 11.5px;
-                line-height: 1.6;
-                text-align: center;
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                flex-wrap: wrap;
-                gap: 6px 8px;
-            }
-            .dvsa-p .dvsa-credit .dvsa-credit-privacy {
-                color: #00703c;
-                font-weight: 600;
-            }
-            .dvsa-p .dvsa-credit .dvsa-credit-link {
-                color: #1d70b8;
-                text-decoration: none;
-                font-weight: 500;
-            }
-            .dvsa-p .dvsa-credit .dvsa-credit-link:hover { text-decoration: underline; }
-            .dvsa-p .dvsa-credit .dvsa-credit-sep { color: #b1b4b6; }
         `;
         (document.head || document.documentElement).appendChild(style);
     }
@@ -3434,18 +3408,6 @@
                 <span class="dvsa-shortcut-sep">·</span>
                 <span class="dvsa-shortcut-kbd">Esc</span> close
             </p>
-
-            <div class="dvsa-credit">
-                <span class="dvsa-credit-privacy" title="No data leaves your browser. No analytics, no telemetry, no external calls beyond DVSA itself.">100% local, no data leaves your browser</span>
-                <span class="dvsa-credit-sep">·</span>
-                Made by <a class="dvsa-credit-link" href="https://github.com/alchemycharlie" target="_blank" rel="noopener noreferrer">@alchemycharlie</a>
-                <span class="dvsa-credit-sep">·</span>
-                <a class="dvsa-credit-link" href="https://buymeacoffee.com/charlie.martina" target="_blank" rel="noopener noreferrer">Buy me a coffee</a>
-                <span class="dvsa-credit-sep">·</span>
-                <a class="dvsa-credit-link" href="https://github.com/alchemycharlie/dvsa-earlier-slot-watcher" target="_blank" rel="noopener noreferrer">GitHub</a>
-                <span class="dvsa-credit-sep">·</span>
-                <a class="dvsa-credit-link" href="https://github.com/alchemycharlie/dvsa-earlier-slot-watcher/issues" target="_blank" rel="noopener noreferrer">Report issue</a>
-            </div>
         `;
     }
 
