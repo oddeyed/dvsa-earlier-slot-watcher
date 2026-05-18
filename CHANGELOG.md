@@ -6,6 +6,20 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and thi
 
 ---
 
+## [1.0.6], 2026-05-18
+
+### Added
+
+- **Queue-it virtual waiting room recognition.** DVSA uses Queue-it during peak load to put users in a virtual queue before they can reach the booking system. Previously the script wasn't running on the queue page at all (it lives on `queue.driverpracticaltest.dvsa.gov.uk`, a subdomain outside the script's previous `@match` rules), so users saw the floating status pill disappear when they got queued. The script now matches the queue subdomain too, detects the queue page, and surfaces the live queue position via the status pill (e.g. *"in DVSA queue · 23,731 ahead"*). Monitoring naturally pauses while queued; Queue-it's own auto-redirect resumes the script on the booking page when the user's turn comes up. The script does not interfere with Queue-it's logic, attempt to skip the queue, or refresh the queue page faster than Queue-it itself does, in line with the project's stated security posture ([docs/SECURITY-POSTURE.md](docs/SECURITY-POSTURE.md#how-the-script-responds-to-dvsas-protection-layer)).
+
+### Note for existing users
+
+- The new `@match` rule (`https://queue.driverpracticaltest.dvsa.gov.uk/*`) is a domain Tampermonkey hasn't seen the script on before. On auto-update, Tampermonkey will ask you to grant permission for the new domain. This is expected; granting permission is what lets the queue-page status pill work.
+
+[1.0.6]: https://github.com/alchemycharlie/dvsa-earlier-slot-watcher/releases/tag/v1.0.6
+
+---
+
 ## [1.0.5], 2026-05-17
 
 ### Fixed

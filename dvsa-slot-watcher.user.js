@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         DVSA Earlier Slot Watcher
 // @namespace    https://github.com/alchemycharlie/dvsa-earlier-slot-watcher
-// @version      1.0.5
+// @version      1.0.6
 // @description  For UK learner drivers with an existing DVSA practical driving test booking. Watches the "Change your test" calendar for an earlier cancellation slot at your chosen test centre, alerts you the moment one appears in your target date window, and can optionally auto-reschedule up to the final confirmation page. Does NOT book new tests, you must already have a booking.
 // @author       alchemycharlie
 // @homepageURL  https://github.com/alchemycharlie/dvsa-earlier-slot-watcher
@@ -11,6 +11,7 @@
 // @license      MIT
 // @match        https://driverpracticaltest.dvsa.gov.uk/manage*
 // @match        https://driverpracticaltest.dvsa.gov.uk/login*
+// @match        https://queue.driverpracticaltest.dvsa.gov.uk/*
 // @grant        none
 // @run-at       document-idle
 // @noframes
@@ -22,7 +23,7 @@
     // Script version. Kept in sync with the @version line in the userscript
     // header at the top of this file. Surfaced in the About pane of the
     // settings panel and in the self-test diagnostic output for bug reports.
-    const SCRIPT_VERSION = '1.0.5';
+    const SCRIPT_VERSION = '1.0.6';
 
     // Tab-focus tracking. Browsers throttle setTimeout (and other timers) when
     // a tab is in the background, which can stretch the script's refresh
@@ -832,6 +833,32 @@
         }, ms);
     }
 
+    // ---- Queue-it (DVSA virtual waiting room) ----
+    // DVSA uses Queue-it during peak load. Users land on a queue page served from
+    // queue.driverpracticaltest.dvsa.gov.uk and wait their turn. Queue-it auto-
+    // redirects back to the booking flow when capacity frees up. The script's role
+    // here is to recognise the page, surface the queue position via the status pill,
+    // and stop monitoring (we cannot monitor the booking calendar from the queue
+    // page). The script does NOT interfere with Queue-it's redirect or attempt to
+    // skip the queue — that would be exactly the kind of working-around-DVSA-
+    // protection-mechanisms behaviour disclaimed in docs/SECURITY-POSTURE.md.
+    function isQueueItPage() {
+        if (document.querySelector('meta#queue-it_log')) return true;
+        if (document.body && document.body.dataset && document.body.dataset.pageid === 'queue') {
+            return true;
+        }
+        return false;
+    }
+
+    async function handleQueueItPage() {
+        log('On DVSA Queue-it waiting room. Monitoring paused; Queue-it will redirect us to the booking flow when our turn comes up.');
+        setStatus({ state: 'queue' });
+        // renderStatusPill reads the position live from the page each tick, so no
+        // additional polling needed here. When Queue-it redirects us back to the
+        // booking flow, the next page navigation re-runs main() and normal scanning
+        // resumes.
+    }
+
     // Cap auto-login retries per session. Repeated failed logins are the fastest path
     // to an Error 15 block, so after MAX_LOGIN_ATTEMPTS we bail and ask for manual help.
     const LOGIN_ATTEMPTS_KEY = 'dvsa-watcher-login-attempts';
@@ -1337,6 +1364,19 @@
                 }
                 bg = '#1d70b8';
                 break;
+            case 'queue': {
+                // Read the live queue position from Queue-it's own DOM. Queue-it
+                // updates this value every 40s via its own polling loop; this
+                // renderer runs every 1s and just picks up the latest.
+                const el = document.getElementById('MainPart_lbUsersInLineAheadOfYou');
+                const raw = el ? (el.textContent || '').replace(/[^0-9]/g, '') : '';
+                const n = parseInt(raw, 10);
+                text = Number.isFinite(n) && n > 0
+                    ? `in DVSA queue · ${n.toLocaleString('en-GB')} ahead`
+                    : 'in DVSA queue';
+                bg = '#1d70b8';
+                break;
+            }
             case 'invalid':
                 text = '⚙ configure to start';
                 bg = '#f47738';
@@ -5574,6 +5614,15 @@
             return;
         }
 
+        // Queue-it virtual waiting room: lives on its own subdomain, has no body-ID
+        // matching PAGE_STATE values, and is handled by Queue-it's own auto-redirect.
+        // We just surface the queue position via the status pill and wait. Detection
+        // runs BEFORE the body-ID switch since the queue page doesn't expose page-* IDs.
+        if (isQueueItPage()) {
+            await handleQueueItPage();
+            return;
+        }
+
         setStatus({ state: 'scanning', endTime: null });
         const state = document.body.id || '';
         log(`Page state: ${state || '(unknown)'}`);
@@ -5609,7 +5658,7 @@
                     fireInterventionAlert(intervention);
                     return;
                 }
-                log('Not a recognised page state. Idling. (Queue-it, Error 15, or other.)');
+                log('Not a recognised page state. Idling. (Error 15 or other unexpected page.)');
                 return;
         }
     }
