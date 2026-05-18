@@ -1120,8 +1120,16 @@
             }
         }
     }
-    document.addEventListener('click', primeUserGestureFeatures, { once: true, capture: true });
-    document.addEventListener('keydown', primeUserGestureFeatures, { once: true, capture: true });
+    // Listen on a broad set of gesture types so priming succeeds on any user
+    // interaction. Browsers count each of these as a "user activation" for the
+    // purposes of unlocking autoplay. pointerdown covers mouse + touch + pen
+    // via the unified Pointer Events API; touchstart is a fallback for older
+    // browsers that don't dispatch pointerdown. {once:true} self-removes after
+    // priming so we don't keep listeners alive once the gesture has happened.
+    document.addEventListener('click',       primeUserGestureFeatures, { once: true, capture: true });
+    document.addEventListener('keydown',     primeUserGestureFeatures, { once: true, capture: true });
+    document.addEventListener('pointerdown', primeUserGestureFeatures, { once: true, capture: true });
+    document.addEventListener('touchstart',  primeUserGestureFeatures, { once: true, capture: true, passive: true });
 
     // =========================================================================
     //  SETTINGS PANEL
@@ -3111,12 +3119,17 @@
             else                       notif = { label: 'Not yet granted',  color: '#f47738', icon: '⚠' };
         }
 
-        // Audio context state
-        let audio = { label: 'Not primed', color: '#505a5f', icon: '○' };
+        // Audio context state. This card tracks the in-page Web Audio chime
+        // only, not the OS-level notification sound (which is handled by the
+        // browser/OS once notification permission is granted and doesn't need
+        // a page-level gesture). The labels below say "chime" explicitly so
+        // users don't conclude they have no audio at all if it shows "tap to
+        // enable" — OS notifications still play sound independently.
+        let audio = { label: 'Tap to enable', color: '#f47738', icon: '⚠' };
         if (audioCtx) {
-            if      (audioCtx.state === 'running')   audio = { label: 'Ready',           color: '#00703c', icon: '✓' };
-            else if (audioCtx.state === 'suspended') audio = { label: 'Awaiting click',  color: '#f47738', icon: '⚠' };
-            else                                       audio = { label: audioCtx.state,    color: '#505a5f', icon: '○' };
+            if      (audioCtx.state === 'running')   audio = { label: 'Ready',         color: '#00703c', icon: '✓' };
+            else if (audioCtx.state === 'suspended') audio = { label: 'Tap to enable', color: '#f47738', icon: '⚠' };
+            else                                       audio = { label: audioCtx.state,  color: '#505a5f', icon: '○' };
         }
 
         // Last scan
@@ -3184,7 +3197,7 @@
                 <legend class="dvsa-lg"><span class="dvsa-ic">${dvsaIcon('heart')}</span>Health</legend>
                 <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(125px, 1fr));gap:10px;">
                     ${card('Notifications', notif)}
-                    ${card('Audio',         audio)}
+                    ${card('Chime',         audio)}
                     ${card('Last scan',     lastScan)}
                     ${card('Auto-login',    login)}
                     ${card('Tab focus',     tabFocus)}

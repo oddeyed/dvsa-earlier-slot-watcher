@@ -148,9 +148,22 @@ Most likely:
 2. **Focus/DND mode**, macOS Focus, Windows Focus Assist, and Do Not Disturb modes swallow notifications. Whitelist the browser or disable.
 3. **Notifications unsupported**, locked-down browsers or in-app webviews. Use a desktop browser.
 
-### Audio chime isn't playing
+### Audio alerts and the browser's autoplay policy
 
-Web Audio needs a user gesture before it can play. Click anywhere on the page once. Health card should show **Audio: Ready**. Use **Test alert** to verify.
+The script has two audio paths and they behave differently:
+
+- **OS notification sound** (the more reliable one) — when a match fires, the script triggers a browser/OS notification, and the OS plays its own notification sound. This works **without any page-level gesture**; you just need to grant notification permission once (the prompt appears on first run). If notifications are granted and your OS notification sound is on, you'll get audio alerts whether or not you've clicked anywhere on the page.
+- **In-page Web Audio chime** (the script's own beep) — Browsers (Chrome, Firefox, Safari) gate Web Audio behind a "user gesture" requirement: any click, tap, or keypress on the page unlocks it. After the first interaction, the chime works for the rest of the session. The Health card's **Chime** tile shows the current state (`Ready` after gesture, `Tap to enable` before).
+
+If you've granted notification permission, the absence of the in-page chime isn't a real problem — the OS notification handles the audio cue, even when the tab is backgrounded.
+
+**Want zero-gesture audio?** Some browsers let you grant a specific site permission to autoplay audio, which bypasses the gesture requirement for that origin and lets the Web Audio chime fire on first load:
+
+- **Chrome / Edge / Brave:** site URL bar → padlock icon → Site settings → Sound → Allow.
+- **Firefox:** site URL bar → padlock icon → click "More information" → Permissions → Autoplay → Allow Audio and Video.
+- **Safari:** Settings → Websites → Auto-Play → set `driverpracticaltest.dvsa.gov.uk` to "Allow All Auto-Play".
+
+This is optional. The default (OS notification sound + in-page chime after first click) is fine for most users.
 
 ### Error 15 / temporary block
 
