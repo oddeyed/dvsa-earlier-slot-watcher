@@ -504,6 +504,45 @@
         return new Promise(r => setTimeout(r, ms));
     }
 
+    // Flash document.title between two strings on an interval, capped at
+    // maxFlips total flips. Used by every alert path that wants to surface a
+    // pending action in the tab bar (intervention, test alert, match, nearby).
+    // Returns the interval ID so callers can clear it early if needed.
+    //
+    // Stops automatically when:
+    //   - flips reaches maxFlips (default 600), OR
+    //   - document.body.dataset.alertAcknowledged is set (unless caller passes
+    //     stopOnAcknowledged: false — used by the test alert because it
+    //     manages its own lifecycle and shouldn't be terminated by real alerts)
+    //
+    // Options:
+    //   intervalMs         (default 700)  ms between flips
+    //   maxFlips           (default 600)  cap total flips so we don't run forever
+    //   restoreTo          (default null) if set, document.title is restored
+    //                                     to this value once the interval ends
+    //   stopOnAcknowledged (default true) also exit when alertAcknowledged is set
+    //   onComplete         (default null) invoked once when the interval ends
+    //                                     (after restoreTo has been applied)
+    function flashTitle(titleA, titleB, opts) {
+        opts = opts || {};
+        const intervalMs = opts.intervalMs || 700;
+        const maxFlips   = opts.maxFlips   || 600;
+        const stopOnAck  = opts.stopOnAcknowledged !== false;
+        let flip = true;
+        let flips = 0;
+        const id = setInterval(() => {
+            if (flips++ >= maxFlips || (stopOnAck && document.body.dataset.alertAcknowledged)) {
+                clearInterval(id);
+                if (opts.restoreTo != null) document.title = opts.restoreTo;
+                if (opts.onComplete) opts.onComplete();
+                return;
+            }
+            document.title = flip ? titleA : titleB;
+            flip = !flip;
+        }, intervalMs);
+        return id;
+    }
+
     // Poll the DOM with `predicate()` until it returns truthy or `timeoutMs` elapses.
     // Resolves with the predicate's return value (so you can do `const el = await waitFor(...)`).
     // Resolves with null on timeout.
@@ -745,21 +784,14 @@
         log(`*** ACTION REQUIRED: ${reason}${detailSuffix} - ${instruction} ***`);
         setStatus({ state: STATUS_STATE.ACTION, label: reason + detailSuffix });
 
-        // Title flash (less urgent cadence than slot-match alert).
-        // Capped at ~10 minutes so it doesn't run forever after you resolve the intervention.
-        let flip = true;
-        let flips = 0;
-        const FLIP_CAP = 600;
-        const titleInterval = setInterval(() => {
-            if (flips++ >= FLIP_CAP || document.body.dataset.alertAcknowledged) {
-                clearInterval(titleInterval);
-                return;
-            }
-            document.title = flip
-                ? `[ACTION NEEDED] ${reason}`
-                : `[!] DVSA Earlier Slot Watcher needs you`;
-            flip = !flip;
-        }, 1000);
+        // Title flash (less urgent cadence than slot-match alert). 1s interval,
+        // capped at ~10 minutes so it doesn't run forever after you resolve the
+        // intervention. Exits early if alertAcknowledged is set.
+        flashTitle(
+            `[ACTION NEEDED] ${reason}`,
+            `[!] DVSA Earlier Slot Watcher needs you`,
+            { intervalMs: 1000, maxFlips: 600 }
+        );
 
         // Different banner colour for temp block (red) vs other interventions (orange)
         const isBlock = reason === INTERVENTION_REASONS.TEMP_BLOCK;
@@ -5094,24 +5126,25 @@
         // Auto-dismiss after 10s
         _testTimers.timeouts.push(setTimeout(cancelTestAlert, 10000));
 
-        // Title flash, 20 flips (~14 seconds)
+        // Title flash, 20 flips (~14 seconds). Test alert manages its own
+        // lifecycle (auto-dismiss, manual click, cancelTestAlert) so it doesn't
+        // stop on global alertAcknowledged — that flag is for real alerts and
+        // should not let a real alert terminate the test alert mid-flow (or
+        // vice versa). Title is restored to whatever was there before the test
+        // started; _testBaseTitle is cleared via onComplete so a second test
+        // alert can capture a fresh baseline.
         _testBaseTitle = document.title;
-        let flip = true;
-        let flips = 0;
-        const FLIP_CAP = 20;
-        const titleInterval = setInterval(() => {
-            if (flips++ >= FLIP_CAP) {
-                clearInterval(titleInterval);
-                if (_testBaseTitle !== null) {
-                    document.title = _testBaseTitle;
-                    _testBaseTitle = null;
-                }
-                return;
+        _testTimers.intervals.push(flashTitle(
+            '>>> TEST ALERT <<<',
+            '>>> CHECK YOUR ALERTS <<<',
+            {
+                intervalMs: 700,
+                maxFlips: 20,
+                restoreTo: _testBaseTitle,
+                stopOnAcknowledged: false,
+                onComplete: () => { _testBaseTitle = null; }
             }
-            document.title = flip ? '>>> TEST ALERT <<<' : '>>> CHECK YOUR ALERTS <<<';
-            flip = !flip;
-        }, 700);
-        _testTimers.intervals.push(titleInterval);
+        ));
 
         // OS notification burst,3 chimes is enough to verify
         fireOSNotificationBurst(
@@ -5134,21 +5167,13 @@
         recordFinding('match', dates);
         setStatus({ state: STATUS_STATE.MATCH, label: dates.join(', ') });
 
-        // Flashing title, capped so it doesn't run forever after you grab the slot.
-        // ~5 minutes of flashing at 700ms is plenty to get your attention.
-        let flip = true;
-        let flips = 0;
-        const FLIP_CAP = 430;
-        const titleInterval = setInterval(() => {
-            if (flips++ >= FLIP_CAP) {
-                clearInterval(titleInterval);
-                return;
-            }
-            document.title = flip
-                ? `>>> SLOT ${dates[0]} <<<`
-                : `>>> GRAB IT NOW <<<`;
-            flip = !flip;
-        }, 700);
+        // Flashing title, capped so it doesn't run forever after you grab the
+        // slot. ~5 minutes of flashing at 700ms is plenty to get your attention.
+        flashTitle(
+            `>>> SLOT ${dates[0]} <<<`,
+            `>>> GRAB IT NOW <<<`,
+            { intervalMs: 700, maxFlips: 430 }
+        );
 
         // Big in-page banner with link to the date
         const banner = document.createElement('div');
@@ -5227,19 +5252,11 @@
 
         // Brief title flash (10 flips ~7 seconds) so users not on the tab still notice
         const baseTitle = document.title;
-        let flip = true;
-        let flips = 0;
-        const titleInterval = setInterval(() => {
-            if (flips++ >= 10) {
-                clearInterval(titleInterval);
-                document.title = baseTitle;
-                return;
-            }
-            document.title = flip
-                ? `ℹ ${centreName.toUpperCase()} ${date}`
-                : `(nearby) ${baseTitle}`;
-            flip = !flip;
-        }, 700);
+        flashTitle(
+            `ℹ ${centreName.toUpperCase()} ${date}`,
+            `(nearby) ${baseTitle}`,
+            { intervalMs: 700, maxFlips: 10, restoreTo: baseTitle }
+        );
 
         // One OS notification, distinct tag so it doesn't replace a real match alert
         fireOSNotificationBurst(
