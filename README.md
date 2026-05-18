@@ -14,7 +14,9 @@ A Tampermonkey userscript for UK learner drivers with an **existing DVSA practic
 </p>
 
 > [!WARNING]
-> Unofficial community tool. No affiliation with DVSA, gov.uk, or the UK Government. No warranty, no liability for missed slots or account issues. By installing you accept the terms in **[DISCLAIMER.md](DISCLAIMER.md)**. Full legal and permitted-use details: [Before you install](#before-you-install).
+> Unofficial community tool. No affiliation with DVSA, gov.uk, or the UK Government. No warranty, no liability for missed slots or account issues. By installing you accept the terms in **[DISCLAIMER.md](DISCLAIMER.md)**. Full legal and permitted-use details: [Terms of use](#terms-of-use).
+
+**Jump to:** [Install](#install) · [Troubleshooting](#troubleshooting) · [FAQ](#faq) · [Privacy](#privacy) · [Auto-book safety](#auto-book-safety) · [Terms of use](#terms-of-use)
 
 ---
 
@@ -22,18 +24,10 @@ A Tampermonkey userscript for UK learner drivers with an **existing DVSA practic
 
 For users with an existing DVSA test booking who want to reschedule earlier:
 
-- **Monitors** the "Change your test" page on a randomised 7-12 minute cycle (configurable 5-60).
+- **Monitors** the "Change your test" page on a randomised 7-12 minute cycle.
 - **Filters** by date window, weekends, and your instructor's unavailable dates.
 - **Alerts** four ways at once: red banner, browser notification, audio chime, tab-title flash.
-- **Auto-books (opt-in)** through to DVSA's "Confirm changes" page, the final commit stays manual.
-- **Logs every finding** to local browser storage. Filter, group, export to CSV.
-- **Stays 100% local**, no analytics, no telemetry, no external network calls beyond DVSA itself.
-
-<p align="center">
-  <img src="docs/screenshots/settings-panel.png" alt="The settings panel showing the Health card, Date window, monitoring preview, test centre dropdown, refresh interval, and other configuration options" width="720">
-  <br>
-  The in-page settings panel. Everything's configured here, no code editing required.
-</p>
+- **Auto-books (opt-in)** through to DVSA's "Confirm changes" page; the final commit stays manual.
 
 ---
 
@@ -115,6 +109,12 @@ Tampermonkey opens its install screen. Click **Install**. It'll auto-update from
 </table>
 
 <p align="center">Steps 4 and 5 cover instructor dates and final options (refresh interval, auto-book opt-in, auto-login). Both are skippable.</p>
+
+<p align="center">
+  <img src="docs/screenshots/settings-panel.png" alt="The settings panel showing the Health card, Date window, monitoring preview, test centre dropdown, refresh interval, and other configuration options" width="720">
+  <br>
+  Once configured, the full settings panel (gear icon, bottom-right) gives access to everything — no code editing required.
+</p>
 
 <p align="center">
   <img src="docs/screenshots/monitoring-preview.png" alt="The 'What you're monitoring' card showing a live breakdown of how many dates would alert vs total in range" width="600">
@@ -338,7 +338,7 @@ If you're not comfortable with auto-book, leave it off. The alerts still fire so
 
 ---
 
-## Before you install
+## Terms of use
 
 This section consolidates the legal and acceptable-use terms. Full versions are in [DISCLAIMER.md](DISCLAIMER.md).
 
