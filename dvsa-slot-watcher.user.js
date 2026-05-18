@@ -103,7 +103,8 @@
         TEST_DATE_CHOICE:   'page-test-preferences',    // "How do you want to search?" page
         CALENDAR:           'page-available-time',      // calendar with bookable dates
         TEST_CENTRE_SEARCH: 'page-test-centre-search', // multi-centre availability search
-        CONFIRM_BOOKING:    'page-confirm-booking'      // final "Confirm changes" review page
+        CONFIRM_BOOKING:    'page-confirm-booking',     // final "Confirm changes" review page
+        SERVICE_UNAVAILABLE:'page-service-c'            // "Service unavailable" downtime page
     };
 
     // Session storage key for "auto-book just navigated here" flag.
@@ -827,33 +828,38 @@
         return el;
     }
 
+    // Detect DVSA's "Service unavailable" page. The canonical signal is the
+    // body ID (`page-service-c`), matching DVSA's pattern for every other
+    // page in the flow. The title and h2 fallbacks are safety nets in case
+    // DVSA changes the body ID in a future site update — better to detect
+    // via a fallback than miss the page entirely.
     function isServiceUnavailable() {
+        if (document.body && document.body.id === PAGE_STATE.SERVICE_UNAVAILABLE) return true;
         if (document.title === 'Service unavailable') return true;
+        const h2 = document.querySelector('#unavailability-notice-title');
+        if (h2 && /can.t use this service/i.test(h2.textContent || '')) return true;
         const h1 = document.querySelector('h1');
         if (h1 && /can.t use this service/i.test(h1.textContent || '')) return true;
         return false;
     }
 
-    // Try to read the expected service-return time directly from the DVSA
-    // "Service unavailable" page text. The page typically states something
-    // like "back at 6am" / "available from 06:00" / "service will return at
-    // 6:00am tomorrow". Returns a Date for the next return time, or null if
-    // nothing usable is found (caller then falls back to a hardcoded
-    // heuristic).
-    //
-    // Defensive parsing:
-    //   - Time must appear within ~80 chars AFTER a return-related keyword
-    //     ("back", "available", "return", "reopen", "resume", "live",
-    //     "come back", "opens") so we don't match random numbers elsewhere
-    //     on the page (error codes, postcodes, etc.).
-    //   - Hours must fall within a sensible service-restart window (04:00 to
-    //     12:00). Outside this range is almost certainly a parse mistake;
-    //     fall back to the heuristic.
-    //   - First valid match wins.
+    // Read the expected service-return time from the DVSA "Service unavailable"
+    // page. The text lives in a stable element (`#unavailability-notice`) — at
+    // time of writing, contents look like "It'll be back at 6 am". Returns a
+    // Date for the next return time, or null if the element is missing, the
+    // text can't be parsed, or the parsed hour falls outside a sensible
+    // service-restart window. Caller falls back to a hardcoded heuristic in
+    // those cases.
     function parseServiceReturnTime() {
-        const bodyText = ((document.body && document.body.textContent) || '').replace(/\s+/g, ' ');
-        const phrasePattern = /(?:back|available|return|reopen|resume|live|come back|opens?)\b[^.\n]{0,80}?\b(\d{1,2})(?:[:.](\d{2}))?\s*(am|pm)?\b/i;
-        const match = bodyText.match(phrasePattern);
+        const notice = document.getElementById('unavailability-notice');
+        if (!notice) return null;
+        const text = (notice.textContent || '').trim();
+        if (!text) return null;
+
+        // Simple time pattern: "6 am", "6:00", "06:00 am", "6.30am", "6am", etc.
+        // Since we're reading from the canonical notice element, no keyword
+        // anchoring is needed — just extract the time.
+        const match = text.match(/\b(\d{1,2})(?:[:.](\d{2}))?\s*(am|pm)?\b/i);
         if (!match) return null;
 
         let hours = parseInt(match[1], 10);
@@ -863,17 +869,19 @@
         if (ampm === 'am' && hours === 12) hours = 0;
         if (hours < 0 || hours > 23 || minutes < 0 || minutes > 59) return null;
 
-        // Sensible restart-window sanity check.
+        // Sensible service-restart-window sanity check (04:00-12:00).
+        // Outside this range is almost certainly a parse mistake.
         if (hours < 4 || hours > 12) {
-            log(`Service-down: parsed return hour ${hours} is outside sensible 04:00-12:00 restart window; ignoring (falling back to heuristic).`);
+            log(`Service-down: parsed return hour ${hours} from #unavailability-notice is outside sensible 04:00-12:00 restart window; falling back to heuristic.`);
             return null;
         }
 
         const now = new Date();
         const target = new Date(now);
         target.setHours(hours, minutes, 0, 0);
-        // If the parsed time has already passed today, assume tomorrow.
         if (target <= now) target.setDate(target.getDate() + 1);
+
+        log(`Service-down: parsed "${text}" from #unavailability-notice → return at ${target.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })}.`);
         return target;
     }
 
@@ -5824,9 +5832,15 @@
             case PAGE_STATE.CONFIRM_BOOKING:
                 await handleConfirmBooking();
                 return;
+            case PAGE_STATE.SERVICE_UNAVAILABLE:
+                log('Detected DVSA "Service unavailable" page.');
+                scheduleWakeUp();
+                return;
             default:
+                // Safety net: if DVSA changes the body ID we still detect
+                // service-unavailable via title/heading text fallbacks.
                 if (isServiceUnavailable()) {
-                    log('Detected DVSA "Service unavailable" overnight downtime page.');
+                    log('Detected DVSA "Service unavailable" page (via fallback detection — body ID may have changed).');
                     scheduleWakeUp();
                     return;
                 }
