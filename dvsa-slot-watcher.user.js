@@ -3114,32 +3114,115 @@
         }
     }
 
-    let _panelEscHandler = null;
-    function openSettingsPanel(opts) {
-        opts = opts || {};
-        if (document.getElementById('dvsa-watcher-panel')) return;
+    // ---- Modal overlay factory ----
+    // The settings panel, history panel, and diagnostic modal all sit on a
+    // full-screen overlay backdrop with the same z-index, the same dimmer,
+    // the same Esc-to-close behaviour, and the same click-outside-to-close
+    // behaviour. Their PANELS differ in width, padding, and (for history) a
+    // flex-column layout, but everything else is identical.
+    //
+    // createModalOverlay() builds the overlay + panel shell, wires the Esc
+    // and click-outside dismiss handlers, and returns { overlay, panel, close }
+    // for the caller to populate. Close is idempotent and removes both the
+    // overlay and the keydown listener cleanly.
+    //
+    // The auto-book consent modal does NOT use this factory because (a) it
+    // uses CSS classes for styling rather than inline cssText, and (b) it
+    // treats click-outside as a Cancel action rather than a passive dismiss.
+    //
+    // Options:
+    //   id            required; overlay element id (also used by the
+    //                 already-open guard)
+    //   panelWidth    px (default 720)
+    //   panelPadding  px (default 28)
+    //   panelMaxVh    vh integer for max-height (default 92)
+    //   panelFlexColumn  if true, panel uses display:flex/flex-direction:column
+    //                    and overflow:hidden (history panel pattern, so its
+    //                    footer can be sticky inside the panel rather than
+    //                    pushing past max-height)
+    //   onClose       optional, called once after the overlay is removed
+    //   dismissOnClickOutside  default true
+    function createModalOverlay(opts) {
+        if (document.getElementById(opts.id)) return null;
 
         const overlay = document.createElement('div');
-        overlay.id = 'dvsa-watcher-panel';
+        overlay.id = opts.id;
         overlay.style.cssText = [
             'position:fixed','inset:0',`z-index:${Z_INDEX_OVERLAY}`,
-            'background:rgba(0,0,0,.55)','display:flex','align-items:center','justify-content:center',
+            'background:rgba(0,0,0,.55)',
+            'display:flex','align-items:center','justify-content:center',
             'font:14px/1.4 system-ui,sans-serif'
         ].join(';');
 
         const panel = document.createElement('div');
         panel.className = 'dvsa-p';
-        panel.style.cssText = [
-            'background:#fff','color:#0b0c0c','width:720px','max-width:96vw',
-            'max-height:92vh','overflow-y:auto','border-radius:8px',
-            'box-shadow:0 10px 30px rgba(0,0,0,.45)','padding:28px','box-sizing:border-box'
-        ].join(';');
+        const panelStyles = [
+            'background:#fff','color:#0b0c0c',
+            `width:${opts.panelWidth || 720}px`,'max-width:96vw',
+            `max-height:${opts.panelMaxVh || 92}vh`,
+            'border-radius:8px',
+            'box-shadow:0 10px 30px rgba(0,0,0,.45)',
+            `padding:${opts.panelPadding || 28}px`,
+            'box-sizing:border-box'
+        ];
+        if (opts.panelFlexColumn) {
+            panelStyles.push('display:flex','flex-direction:column','overflow:hidden');
+        } else {
+            panelStyles.push('overflow-y:auto');
+        }
+        panel.style.cssText = panelStyles.join(';');
 
-        panel.innerHTML = buildPanelHTML(opts.message);
         overlay.appendChild(panel);
         document.body.appendChild(overlay);
 
-        panel.querySelector('#dvsa-cancel').addEventListener('click', closeSettingsPanel);
+        let closed = false;
+        function close() {
+            if (closed) return;
+            closed = true;
+            if (overlay.parentNode) overlay.parentNode.removeChild(overlay);
+            document.removeEventListener('keydown', escHandler);
+            if (opts.onClose) opts.onClose();
+        }
+
+        function escHandler(e) {
+            if (e.key === 'Escape') close();
+        }
+        document.addEventListener('keydown', escHandler);
+
+        if (opts.dismissOnClickOutside !== false) {
+            overlay.addEventListener('click', (e) => {
+                if (e.target === overlay) close();
+            });
+        }
+
+        return { overlay, panel, close };
+    }
+
+    // The settings/history/diagnostic modals expose module-level "close X"
+    // functions that callers (e.g. button handlers, wizard re-run, consent
+    // onClose) invoke without holding a reference to the factory result.
+    // We track the live close fn for each modal in these vars; the public
+    // closeX() wrappers delegate. When a modal isn't open, the var is null
+    // and the wrapper is a no-op.
+    let _closeSettingsPanel = null;
+    let _closeHistoryPanel = null;
+    let _closeDiagnosticModal = null;
+
+    function openSettingsPanel(opts) {
+        opts = opts || {};
+        const modal = createModalOverlay({
+            id: 'dvsa-watcher-panel',
+            panelWidth: 720,
+            panelPadding: 28,
+            onClose: () => { _closeSettingsPanel = null; }
+        });
+        if (!modal) return;
+        const { panel, close } = modal;
+        _closeSettingsPanel = close;
+
+        panel.innerHTML = buildPanelHTML(opts.message);
+
+        panel.querySelector('#dvsa-cancel').addEventListener('click', close);
         panel.querySelector('#dvsa-save').addEventListener('click', () => handlePanelSave(panel));
         panel.querySelector('#dvsa-reset').addEventListener('click', () => handlePanelReset());
         panel.querySelector('#dvsa-view-history').addEventListener('click', () => openHistoryPanel());
@@ -3171,7 +3254,7 @@
             // so the user can walk through with their existing config
             // pre-filled. Cancelling mid-wizard leaves config untouched;
             // only the final Finish click writes back to localStorage.
-            closeSettingsPanel();
+            close();
             openSetupWizard();
         });
 
@@ -3192,21 +3275,10 @@
         }
 
         attachLiveValidation(panel);
-
-        overlay.addEventListener('click', (e) => {
-            if (e.target === overlay) closeSettingsPanel();
-        });
-        _panelEscHandler = (e) => { if (e.key === 'Escape') closeSettingsPanel(); };
-        document.addEventListener('keydown', _panelEscHandler);
     }
 
     function closeSettingsPanel() {
-        const overlay = document.getElementById('dvsa-watcher-panel');
-        if (overlay) overlay.remove();
-        if (_panelEscHandler) {
-            document.removeEventListener('keydown', _panelEscHandler);
-            _panelEscHandler = null;
-        }
+        if (_closeSettingsPanel) _closeSettingsPanel();
     }
 
     // Health snapshot, diagnostic block at the top of the settings panel.
@@ -4061,27 +4133,18 @@
         return results.join('\n');
     }
 
-    let _diagnosticEscHandler = null;
     function openDiagnosticModal() {
-        if (document.getElementById('dvsa-diagnostic-modal')) return;
-
         const report = runSelfTestDiagnostic();
-
-        const overlay = document.createElement('div');
-        overlay.id = 'dvsa-diagnostic-modal';
-        overlay.style.cssText = [
-            'position:fixed','inset:0',`z-index:${Z_INDEX_OVERLAY}`,
-            'background:rgba(0,0,0,.55)','display:flex','align-items:center','justify-content:center',
-            'font:14px/1.4 system-ui,sans-serif'
-        ].join(';');
-
-        const panel = document.createElement('div');
-        panel.className = 'dvsa-p';
-        panel.style.cssText = [
-            'background:#fff','color:#0b0c0c','width:680px','max-width:96vw',
-            'max-height:88vh','overflow-y:auto','border-radius:8px',
-            'box-shadow:0 10px 30px rgba(0,0,0,.45)','padding:24px','box-sizing:border-box'
-        ].join(';');
+        const modal = createModalOverlay({
+            id: 'dvsa-diagnostic-modal',
+            panelWidth: 680,
+            panelPadding: 24,
+            panelMaxVh: 88,
+            onClose: () => { _closeDiagnosticModal = null; }
+        });
+        if (!modal) return;
+        const { panel, close } = modal;
+        _closeDiagnosticModal = close;
 
         panel.innerHTML = `
             <h2 style="margin:0 0 6px;font-size:20px;">Self-test diagnostic</h2>
@@ -4093,9 +4156,6 @@
                 <button id="dvsa-diagnostic-close" type="button" class="dvsa-btn dvsa-btn-primary">Close</button>
             </div>
         `;
-
-        overlay.appendChild(panel);
-        document.body.appendChild(overlay);
         panel.querySelector('#dvsa-diagnostic-output').textContent = report;
 
         const copyBtn = panel.querySelector('#dvsa-diagnostic-copy');
@@ -4114,22 +4174,11 @@
         panel.querySelector('#dvsa-diagnostic-rerun').addEventListener('click', () => {
             panel.querySelector('#dvsa-diagnostic-output').textContent = runSelfTestDiagnostic();
         });
-        panel.querySelector('#dvsa-diagnostic-close').addEventListener('click', closeDiagnosticModal);
-
-        overlay.addEventListener('click', (e) => {
-            if (e.target === overlay) closeDiagnosticModal();
-        });
-        _diagnosticEscHandler = (e) => { if (e.key === 'Escape') closeDiagnosticModal(); };
-        document.addEventListener('keydown', _diagnosticEscHandler);
+        panel.querySelector('#dvsa-diagnostic-close').addEventListener('click', close);
     }
 
     function closeDiagnosticModal() {
-        const overlay = document.getElementById('dvsa-diagnostic-modal');
-        if (overlay) overlay.remove();
-        if (_diagnosticEscHandler) {
-            document.removeEventListener('keydown', _diagnosticEscHandler);
-            _diagnosticEscHandler = null;
-        }
+        if (_closeDiagnosticModal) _closeDiagnosticModal();
     }
 
     // ---- Auto-book consent modal ----
@@ -4737,7 +4786,6 @@
     // filter buttons, and export/copy/clear actions. Opened from the settings
     // panel "View scan history" button or via dvsaWatcher.history() in DevTools.
 
-    let _historyEscHandler = null;
     let _historyFilter = 'all';     // 'all' | 'match' | 'spotted'
     let _historyGrouped = false;    // false = one row per sighting, true = group by (date, type, note)
     // Settings-panel state: working copy of the instructor-date list while
@@ -4746,48 +4794,25 @@
     let _panelInstructorDates = [];
 
     function openHistoryPanel() {
-        if (document.getElementById('dvsa-history-panel')) return;
-
-        const overlay = document.createElement('div');
-        overlay.id = 'dvsa-history-panel';
-        overlay.style.cssText = [
-            'position:fixed','inset:0',`z-index:${Z_INDEX_OVERLAY}`,
-            'background:rgba(0,0,0,.55)','display:flex','align-items:center','justify-content:center',
-            'font:14px/1.4 system-ui,sans-serif'
-        ].join(';');
-
-        const panel = document.createElement('div');
-        panel.className = 'dvsa-p';
-        // Flex column so the footer (Export/Copy/Clear/Close) stays anchored to
-        // the bottom of the visible panel regardless of how many history rows
-        // exist. The table region inside buildHistoryHTML takes flex:1 and gets
-        // its own scroll; header and footer use flex-shrink:0 to hold their
-        // natural sizes.
-        panel.style.cssText = [
-            'background:#fff','color:#0b0c0c','width:820px','max-width:96vw',
-            'max-height:92vh','border-radius:8px',
-            'box-shadow:0 10px 30px rgba(0,0,0,.45)','padding:28px','box-sizing:border-box',
-            'display:flex','flex-direction:column','overflow:hidden'
-        ].join(';');
-
-        overlay.appendChild(panel);
-        document.body.appendChild(overlay);
-        renderHistoryPanel(panel);
-
-        overlay.addEventListener('click', (e) => {
-            if (e.target === overlay) closeHistoryPanel();
+        // panelFlexColumn:true so the footer (Export/Copy/Clear/Close) stays
+        // anchored at the bottom of the visible panel regardless of how many
+        // history rows exist. The table region inside buildHistoryHTML uses
+        // flex:1 + overflow-y:auto to scroll independently; header and
+        // footer flex-shrink:0 to hold their natural sizes.
+        const modal = createModalOverlay({
+            id: 'dvsa-history-panel',
+            panelWidth: 820,
+            panelFlexColumn: true,
+            onClose: () => { _closeHistoryPanel = null; }
         });
-        _historyEscHandler = (e) => { if (e.key === 'Escape') closeHistoryPanel(); };
-        document.addEventListener('keydown', _historyEscHandler);
+        if (!modal) return;
+        const { panel } = modal;
+        _closeHistoryPanel = modal.close;
+        renderHistoryPanel(panel);
     }
 
     function closeHistoryPanel() {
-        const overlay = document.getElementById('dvsa-history-panel');
-        if (overlay) overlay.remove();
-        if (_historyEscHandler) {
-            document.removeEventListener('keydown', _historyEscHandler);
-            _historyEscHandler = null;
-        }
+        if (_closeHistoryPanel) _closeHistoryPanel();
     }
 
     function renderHistoryPanel(panel) {
