@@ -212,7 +212,9 @@ The script does not interfere with the queue, attempt to skip it, or refresh fas
 
 DVSA's booking service is sometimes taken offline and returns a "Service unavailable" page. The reason isn't always clear from the user side — it could be scheduled maintenance, capacity management, or something else — and DVSA doesn't publish a fixed schedule that I'm aware of. The page itself usually states when the service is expected to return.
 
-When the script lands on this page, it schedules itself to resume scanning at 06:05 the following morning. **This is a heuristic based on observed patterns**, not a published DVSA timetable, so the actual return time can differ. Until the script resumes, the status pill shows the scheduled wake time and the browser tab title is prefixed with `[Wake HH:MM]` so you can leave the tab in the background. The script logs an hourly heartbeat to the browser console so you can confirm it's still alive.
+When the script lands on this page, it first tries to read the stated return time directly from the page text (e.g. *"back at 6am"*, *"available from 06:00"*). If a sensible time is found, the script schedules itself to resume scanning 5 minutes after that. If the page text doesn't include a parseable time — DVSA changes the wording, or the page lays out the time in a way the parser doesn't recognise — the script falls back to a **06:05 heuristic** based on previously observed patterns. The fallback isn't guaranteed to match reality.
+
+Until the script resumes, the status pill shows the scheduled wake time and the browser tab title is prefixed with `[Wake HH:MM]` so you can leave the tab in the background. The script logs an hourly heartbeat to the browser console so you can confirm it's still alive.
 
 If the service is back before the scheduled wake time, manually reloading the DVSA tab will resume scanning earlier.
 

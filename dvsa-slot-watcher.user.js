@@ -834,13 +834,72 @@
         return false;
     }
 
-    function scheduleWakeUp() {
+    // Try to read the expected service-return time directly from the DVSA
+    // "Service unavailable" page text. The page typically states something
+    // like "back at 6am" / "available from 06:00" / "service will return at
+    // 6:00am tomorrow". Returns a Date for the next return time, or null if
+    // nothing usable is found (caller then falls back to a hardcoded
+    // heuristic).
+    //
+    // Defensive parsing:
+    //   - Time must appear within ~80 chars AFTER a return-related keyword
+    //     ("back", "available", "return", "reopen", "resume", "live",
+    //     "come back", "opens") so we don't match random numbers elsewhere
+    //     on the page (error codes, postcodes, etc.).
+    //   - Hours must fall within a sensible service-restart window (04:00 to
+    //     12:00). Outside this range is almost certainly a parse mistake;
+    //     fall back to the heuristic.
+    //   - First valid match wins.
+    function parseServiceReturnTime() {
+        const bodyText = ((document.body && document.body.textContent) || '').replace(/\s+/g, ' ');
+        const phrasePattern = /(?:back|available|return|reopen|resume|live|come back|opens?)\b[^.\n]{0,80}?\b(\d{1,2})(?:[:.](\d{2}))?\s*(am|pm)?\b/i;
+        const match = bodyText.match(phrasePattern);
+        if (!match) return null;
+
+        let hours = parseInt(match[1], 10);
+        const minutes = match[2] ? parseInt(match[2], 10) : 0;
+        const ampm = (match[3] || '').toLowerCase();
+        if (ampm === 'pm' && hours < 12) hours += 12;
+        if (ampm === 'am' && hours === 12) hours = 0;
+        if (hours < 0 || hours > 23 || minutes < 0 || minutes > 59) return null;
+
+        // Sensible restart-window sanity check.
+        if (hours < 4 || hours > 12) {
+            log(`Service-down: parsed return hour ${hours} is outside sensible 04:00-12:00 restart window; ignoring (falling back to heuristic).`);
+            return null;
+        }
+
         const now = new Date();
         const target = new Date(now);
-        target.setHours(6, 5, 0, 0);  // 06:05, giving DVSA 5 minutes after stated 06:00 restart
-        if (target <= now) {
-            target.setDate(target.getDate() + 1);
+        target.setHours(hours, minutes, 0, 0);
+        // If the parsed time has already passed today, assume tomorrow.
+        if (target <= now) target.setDate(target.getDate() + 1);
+        return target;
+    }
+
+    function scheduleWakeUp() {
+        const now = new Date();
+
+        // Prefer reading the return time from the page itself. The DVSA
+        // "Service unavailable" page typically states when the service is
+        // expected to return; trusting that is more robust than hardcoding
+        // a fixed time, which only works as long as DVSA's downtime patterns
+        // don't shift. If parsing fails (page text doesn't include a usable
+        // time, or it's outside a sensible restart window), fall back to the
+        // historical 06:05 heuristic.
+        let target;
+        const parsed = parseServiceReturnTime();
+        if (parsed) {
+            // +5 min safety margin in case DVSA's stated time is approximate.
+            target = new Date(parsed.getTime() + 5 * 60 * 1000);
+            log(`Service-down: parsed return time from page (${parsed.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })}). Scheduling wake at +5 min safety margin.`);
+        } else {
+            target = new Date(now);
+            target.setHours(6, 5, 0, 0);
+            if (target <= now) target.setDate(target.getDate() + 1);
+            log('Service-down: no return time found in page text. Using 06:05 fallback heuristic.');
         }
+
         const ms = target.getTime() - now.getTime();
         const hours = ms / 3600000;
         const targetStr = target.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
