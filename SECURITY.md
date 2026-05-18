@@ -1,76 +1,45 @@
 # Security Policy
 
-Thanks for taking the time to report a security issue responsibly.
+This is a personal open-source userscript. **The maintainer makes no commitment to ongoing security maintenance, no commitment to reviewing reports, and no commitment to releasing fixes.** The project may be unmaintained at any given time, without notice. See [DISCLAIMER §15 (Discontinuation)](DISCLAIMER.md#15-modifications-discontinuation-and-changes-to-these-terms).
 
-## Supported Versions
+If you'd like to report a security issue responsibly anyway, this document covers the channel and what's in scope.
 
-Only the latest released version of this script receives security updates. If you're running an older version, the first step is usually to update via Tampermonkey (Settings → Installed userscripts → Check for updates).
+## Don't post security details in a public issue
 
-| Version | Supported |
-|---------|-----------|
-| Latest `1.x` | Yes |
-| Anything older | No  |
+If you've found something that could be exploited against other users of the script, **don't post the details in a public issue**. The responsible disclosure channel is GitHub's private vulnerability reporting:
 
-## Reporting a Vulnerability
+<https://github.com/alchemycharlie/dvsa-earlier-slot-watcher/security/advisories/new>
 
-If you've found a security issue in this script, **please do not open a public issue.** Disclose it privately so a fix can be prepared before the issue is widely known.
+A useful report includes:
 
-### Preferred method
-
-Use GitHub's private vulnerability reporting:
-
-1. Go to <https://github.com/alchemycharlie/dvsa-earlier-slot-watcher/security/advisories/new>
-2. Fill in the form with a clear description, reproduction steps, and impact assessment
-3. I'll acknowledge receipt as soon as I'm able
-
-### What to include
-
-A useful report contains:
-
-- A clear description of the issue
-- Step-by-step reproduction (the more specific, the better)
-- An assessment of impact, what an attacker could do, and under what conditions
-- The version of the script you tested against (check the userscript header `@version` line)
+- A description of the issue and what an attacker could do with it
+- Step-by-step reproduction
+- The script version tested against (`@version` line in the userscript header)
 - Your browser and Tampermonkey version
 - Any proof-of-concept code or screenshots
 
-## What's in Scope
+If GitHub's private reporting is unavailable to you, file a public issue with `[Security]` in the title and **non-sensitive** details only.
 
-The following are considered valid security issues:
+## What may be a security issue
 
-- **Credential exposure** via the script's storage, logging, or panel UI (e.g. licence number or booking reference leaking into the DOM, console, or network requests)
-- **XSS in the settings or history panels**, e.g. unsanitised user-supplied strings reaching `innerHTML`
-- **Config import attacks**, e.g. a crafted JSON file causing arbitrary `localStorage` writes outside the allow-listed setting keys
-- **Supply-chain risks**, anything that would let an attacker substitute or modify the script as installed by Tampermonkey users (other than compromising the GitHub repo itself, which is on me to secure)
+For the avoidance of doubt:
+
+- **Credential exposure**: licence number, booking reference, or any other personal data leaking into the DOM, console, network requests, exports, or the panel UI
+- **XSS** in the settings or history panels (e.g. unsanitised user-supplied strings reaching `innerHTML`)
+- **Config import attacks**: a crafted JSON file causing arbitrary `localStorage` writes outside the allow-listed keys
+- **Supply-chain risks**: anything that would let an attacker substitute or modify the script as installed by Tampermonkey users (excluding compromise of the GitHub repo itself)
 - **Sensitive information disclosure** in scan history exports or auto-discovered test centres
 
-## What's Out of Scope
+## What isn't a security issue here
 
-- **DVSA-side issues**, anything on the actual DVSA booking website. Report those to DVSA.
-- **Bot-detection circumvention requests**, the script intentionally operates at human-comparable pace; we won't add evasion techniques.
-- **Third-party browser or extension bugs**, Tampermonkey, browser bugs, OS bugs.
-- **Social engineering** of the maintainer or other users.
-- **Phishing or fake installs** distributed by anyone other than the maintainer, these are not vulnerabilities in this script, but report them to GitHub/Tampermonkey if you find them.
-- **Issues that require the user to install a clearly hostile script**, the threat model assumes the user has installed *this* repo's script via the canonical install link.
+- Anything on DVSA's actual website. Report those to DVSA directly.
+- Requests to bypass DVSA's bot-protection layer, captcha challenges, rate limits, or any other DVSA security mechanism. These are explicitly out of scope (see [docs/SECURITY-POSTURE.md](docs/SECURITY-POSTURE.md)) and won't be entertained.
+- Bugs in Tampermonkey, the browser, or the OS.
+- Social engineering or phishing of the maintainer or users.
+- Issues that require the user to first install a hostile script. The threat model assumes installation via the canonical install link in this repo.
 
-## Disclosure Timeline
+## What happens after you report
 
-I'll aim to:
+That depends entirely on the maintainer's availability and inclination at the time. There is no commitment that reports will be acknowledged, triaged, investigated, or fixed. No timeline applies. The maintainer may respond, fix the issue, archive the project, or take no action at all.
 
-- Acknowledge your report within 7 days
-- Provide an initial assessment within 14 days
-- Release a fix as soon as practical for confirmed issues, usually within 30 days for high-severity issues, longer for lower-severity
-
-This is best-effort. I maintain this script in my spare time alongside a day job, so I can't guarantee tight SLAs. I'll keep you updated either way.
-
-## Public Disclosure
-
-After a fix is released:
-
-- I'll credit you in the [CHANGELOG](CHANGELOG.md) (with your permission and preferred name/handle)
-- If a CVE is appropriate, I'll request one
-- You're free to publish your own write-up, please coordinate the timing with me so users have a chance to update
-
-## Out-of-band Contact
-
-If GitHub's private vulnerability reporting isn't available or you need to reach me by another route, leave a `[Security]`-prefixed issue title with non-sensitive details and I'll follow up to take the conversation private.
+The source is public. If a security issue you've reported matters to you and nothing happens, you're free to fork the repository and address it yourself, or to encourage others to do so.

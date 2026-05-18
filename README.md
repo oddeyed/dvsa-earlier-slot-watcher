@@ -393,13 +393,15 @@ By completing installation and saving any configuration, you confirm that you ha
 
 ## Contributing
 
-Issues and PRs welcome. Use the templates in [.github/ISSUE_TEMPLATE](.github/ISSUE_TEMPLATE/).
+This is a personal project shared as-is. Issue and PR templates exist in [.github/ISSUE_TEMPLATE](.github/ISSUE_TEMPLATE/) if you'd like to file something, but there's no commitment that anything filed will be reviewed, responded to, or merged. See [CONTRIBUTING.md](CONTRIBUTING.md) for the full picture.
 
-For bug reports, please include:
+If you do file a bug report, useful details include:
 
-- Tampermonkey version and browser.
-- Console log snippet (`[DVSA Earlier Slot Watcher]` lines).
-- The DVSA page state when it happened.
+- Tampermonkey version and browser
+- Console log snippet (`[DVSA Earlier Slot Watcher]` lines)
+- The DVSA page state when it happened
+
+For security issues, see [SECURITY.md](SECURITY.md) — don't file those as public issues.
 
 ---
 
