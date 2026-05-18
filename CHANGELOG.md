@@ -6,6 +6,26 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and thi
 
 ---
 
+## [1.0.8], 2026-05-18
+
+### Changed
+
+- **Per-action delays in the click-through flow halved.** Pauses between form fills, button clicks, and page transitions in `handleLogin`, `handleBookingDetails`, `handleTestDateChoice`, and `handleTestCentreSearch` were sitting at 0.15-0.6s, which made the end-to-end click-through feel slow compared to similar tools. They've been cut to roughly half (0.08-0.3s depending on the action). The calendar-walk AJAX wait in `walkBackwards` also tightened from 400-700ms to 250-500ms. Each end-to-end Flow 2 cycle saves roughly 0.6-1.2 seconds on the click-through chain. The auto-book triplet (date → time → Warning Continue) was already fast and is unchanged. The per-action timing is functional only (letting DOM/animations settle and validators run after `input`/`change` events); the script's pacing posture remains the 7-12 minute cycle interval as documented in [docs/SECURITY-POSTURE.md](docs/SECURITY-POSTURE.md).
+
+- **Settings panel Health card "Audio" tile renamed to "Chime".** The tile tracks only the in-page Web Audio chime, which is gated by the browser's autoplay policy. The previous label could mislead users into thinking ALL audio was disabled when in fact the OS notification sound (the more reliable audio path) was working independently. The `Awaiting click` value is now `Tap to enable` for clearer affordance. The README troubleshooting entry has been rewritten to explain both audio paths and document the optional browser-level autoplay permission (per-browser steps for Chrome, Firefox, Safari) as a zero-gesture alternative for users who want it.
+
+### Added
+
+- **Broader gesture types for priming the Web Audio chime.** In addition to `click` and `keydown`, the script now listens for `pointerdown` (unified mouse/touch/pen via the Pointer Events API) and `touchstart` (fallback for older browsers). Slightly broader coverage on touch and pen devices. All listeners use `{once: true}` and self-remove after priming.
+
+### Removed
+
+- **Credit/donate footer strip at the bottom of the settings panel.** The strip ("100% local, no data leaves your browser · Made by @alchemycharlie · Buy me a coffee · GitHub · Report issue") near-duplicated the About fieldset shown earlier in the same panel. The privacy framing is preserved in the README's Privacy section and the DISCLAIMER's no-data-leaves clauses; the panel now ends cleanly with the keyboard-shortcut hint row.
+
+[1.0.8]: https://github.com/alchemycharlie/dvsa-earlier-slot-watcher/releases/tag/v1.0.8
+
+---
+
 ## [1.0.7], 2026-05-18
 
 ### Fixed
