@@ -940,26 +940,28 @@
         // Skip if the form is already filled (e.g. the user typed before the script ran)
         if (licenceInput.value && refInput.value) {
             log('Login form already has values. Not overwriting. Submitting as-is.');
-            await humanPause(0.08, 0.15);
+            await humanPause(0.04, 0.08);
             submitBtn.click();
             return;
         }
 
+        // Fill both fields back-to-back. value-set + input/change dispatch is
+        // synchronous in JS so there's no need to pause between fields. The
+        // single pause before submit lets DVSA's per-field validators (which
+        // attach to the change event) finish before we hit submit.
         log('Auto-filling driving licence number.');
-        await humanPause(0.1, 0.2);
         licenceInput.focus();
         licenceInput.value = LOGIN_LICENCE_NUMBER;
         licenceInput.dispatchEvent(new Event('input',  { bubbles: true }));
         licenceInput.dispatchEvent(new Event('change', { bubbles: true }));
 
-        await humanPause(0.08, 0.15);
         log('Auto-filling booking reference.');
         refInput.focus();
         refInput.value = LOGIN_BOOKING_REF;
         refInput.dispatchEvent(new Event('input',  { bubbles: true }));
         refInput.dispatchEvent(new Event('change', { bubbles: true }));
 
-        await humanPause(0.1, 0.2);
+        await humanPause(0.05, 0.1);
         log('Submitting login form.');
         submitBtn.click();
     }
@@ -995,7 +997,7 @@
             return;
         }
         log('On Booking details page. Will click "Change" for test centre (Flow 2: multi-centre search).');
-        await humanPause(0.15, 0.3);
+        await humanPause(0.08, 0.15);
         const btn = requireSelector('#test-centre-change', 'Change test centre link on booking summary');
         if (!btn) return;
         log('Clicking #test-centre-change.');
@@ -1003,15 +1005,17 @@
     }
 
     async function handleTestDateChoice() {
+        // Single short pause to let the page settle, then click radio + submit
+        // back-to-back. The radio's change-event dispatch runs synchronously,
+        // so there's no need to pause between it and the submit click.
         log('On Test date choice page. Will select "Show earliest available date" and submit.');
-        await humanPause(0.15, 0.3);
+        await humanPause(0.08, 0.15);
         const radio = requireSelector('#test-choice-earliest', '"Show earliest available date" radio');
         if (!radio) return;
         radio.checked = true;
         radio.dispatchEvent(new Event('change', { bubbles: true }));
         log('Selected #test-choice-earliest radio.');
 
-        await humanPause(0.1, 0.2);
         const submitBtn = requireSelector('#driving-licence-submit', 'submit button on test date choice page');
         if (!submitBtn) return;
         log('Clicking submit.');
@@ -1127,13 +1131,14 @@
             return;
         }
 
-        // Otherwise, fill the postcode and submit a fresh search
+        // Otherwise, fill the postcode and submit a fresh search.
+        // Single short pause before the fill (lets the page settle); no second
+        // pause between fill and submit since input/change dispatch is sync.
         log(`Filling postcode "${SEARCH_POSTCODE}" and submitting test centre search.`);
-        await humanPause(0.1, 0.2);
+        await humanPause(0.05, 0.1);
         input.value = SEARCH_POSTCODE;
         input.dispatchEvent(new Event('input',  { bubbles: true }));
         input.dispatchEvent(new Event('change', { bubbles: true }));
-        await humanPause(0.1, 0.2);
         log('Clicking #test-centres-submit.');
         submitBtn.click();
         // Page reload will re-invoke this handler; the fast-path branch will then parse results.
@@ -5518,8 +5523,11 @@
                 log('No "Previous available" link present.');
                 break;
             }
-            // Wait for the calendar to update (AJAX render after clicking "Previous available")
-            await new Promise(r => setTimeout(r, 250 + Math.random() * 250));
+            // Wait for the calendar to update (AJAX render after clicking "Previous available").
+            // DVSA's calendar AJAX typically completes in 100-250ms; this 180-380ms
+            // window leaves a small buffer for slower connections. Going lower risks
+            // reading a stale DOM before the new month has rendered.
+            await new Promise(r => setTimeout(r, 180 + Math.random() * 200));
             // If the click produced the warning, we are done walking
             if (isNoEarlierWarningVisible()) {
                 log('Hit "no earlier tests" warning. End of earlier dates.');
