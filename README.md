@@ -178,6 +178,16 @@ Full rationale for how the script behaves here: [docs/SECURITY-POSTURE.md](docs/
   <img src="docs/screenshots/captcha-detection.png" alt="The intervention banner when the script recognises a CAPTCHA challenge" width="720">
 </p>
 
+### DVSA put you in a queue (Queue-it waiting room)
+
+DVSA uses Queue-it (a virtual waiting room) during peak load. The script recognises the queue page and shows your live position in the floating status pill (e.g. "in DVSA queue · 23,731 ahead"). Monitoring naturally pauses while queued — there's nothing to scan from the waiting room. Queue-it auto-redirects you back to the booking flow when your turn comes up, and monitoring resumes automatically.
+
+The script does not interfere with the queue, attempt to skip it, or refresh faster than Queue-it itself does. Full rationale: [docs/SECURITY-POSTURE.md](docs/SECURITY-POSTURE.md#how-the-script-responds-to-dvsas-protection-layer).
+
+<p align="center">
+  <img src="docs/screenshots/queue-it-aware.png" alt="The floating status pill showing the live DVSA queue position while the user is in Queue-it's virtual waiting room" width="720">
+</p>
+
 ### "Layout broken" intervention
 
 DVSA changed page structure. The script bails rather than clicking the wrong thing.
