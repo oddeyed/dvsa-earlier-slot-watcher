@@ -3085,27 +3085,16 @@
 
     function finishWizard() {
         const c = _wizardState.config;
-        // Write the same shape the regular Save handler writes
-        const cfg = {
-            TARGET_START_DATE:            c.TARGET_START_DATE,
-            TARGET_END_DATE:              c.TARGET_END_DATE,
-            EXPECTED_CENTRE:              c.EXPECTED_CENTRE,
-            SEARCH_POSTCODE:              c.SEARCH_POSTCODE,
-            REFRESH_MIN_MINS:             c.REFRESH_MIN_MINS,
-            REFRESH_MAX_MINS:             c.REFRESH_MAX_MINS,
-            EXCLUDE_WEEKENDS:             c.EXCLUDE_WEEKENDS,
-            WALK_PREV_AVAIL:              c.WALK_PREV_AVAIL,
-            MAX_PREV_CLICKS:              c.MAX_PREV_CLICKS,
-            TEST_MODE:                    false,
-            MANUAL_TRIGGER:               false,
-            AUTO_BOOK:                    c.AUTO_BOOK,
-            ALERT_ANY_CENTRE:             false,
-            EARLIEST_TIME:                c.EARLIEST_TIME,
-            LATEST_TIME:                  c.LATEST_TIME,
-            LOGIN_LICENCE_NUMBER:         c.LOGIN_LICENCE_NUMBER,
-            LOGIN_BOOKING_REF:            c.LOGIN_BOOKING_REF,
-            INSTRUCTOR_UNAVAILABLE_DATES: c.INSTRUCTOR_UNAVAILABLE_DATES
-        };
+        // Build the config object from PANEL_FIELD_MAP. Each field is read
+        // from the wizard's working-copy state, except for fields with a
+        // `wizardForce` value (TEST_MODE, MANUAL_TRIGGER, ALERT_ANY_CENTRE),
+        // which the wizard intentionally resets to safe defaults regardless
+        // of any prior config value. Adding a new field to PANEL_FIELD_MAP
+        // automatically flows it through the wizard finish.
+        const cfg = {};
+        PANEL_FIELD_MAP.forEach(f => {
+            cfg[f.key] = (f.wizardForce !== undefined) ? f.wizardForce : c[f.key];
+        });
         try {
             localStorage.setItem(PANEL_CONFIG_KEY, JSON.stringify(cfg));
             localStorage.setItem(WIZARD_COMPLETED_KEY, new Date().toISOString());
@@ -4234,56 +4223,90 @@
     // refuses any JSON that contains keys not in this map. Keeps the format
     // explicit and prevents arbitrary localStorage pollution via a malicious
     // import file.
-    const _ALLOWED_SETTING_KEYS = {
-        TARGET_START_DATE:            'string',
-        TARGET_END_DATE:              'string',
-        EXPECTED_CENTRE:              'string',
-        SEARCH_POSTCODE:              'string',
-        REFRESH_MIN_MINS:             'number',
-        REFRESH_MAX_MINS:             'number',
-        EXCLUDE_WEEKENDS:             'boolean',
-        WALK_PREV_AVAIL:              'boolean',
-        MAX_PREV_CLICKS:              'number',
-        TEST_MODE:                    'boolean',
-        MANUAL_TRIGGER:               'boolean',
-        AUTO_BOOK:                    'boolean',
-        ALERT_ANY_CENTRE:             'boolean',
-        EARLIEST_TIME:                'string',
-        LATEST_TIME:                  'string',
-        LOGIN_LICENCE_NUMBER:         'string',
-        LOGIN_BOOKING_REF:            'string',
-        INSTRUCTOR_UNAVAILABLE_DATES: 'array'
+    // ---- Canonical panel field map ----
+    // Single source of truth for "what config fields exist, how to read each
+    // from the settings panel DOM, how each is typed in JSON, and what the
+    // wizard forces on finish". Three writers consume this list:
+    //   - readPanelInputs(panel): reads DOM → config object (used by
+    //     handlePanelSave and exportPanelConfig)
+    //   - finishWizard: reads from _wizardState.config → config object, with
+    //     per-field wizardForce overrides
+    //   - _ALLOWED_SETTING_KEYS (derived below): the import-validator allowlist
+    //     used by parseImportedConfig
+    // Adding a new config field means a single entry in this array and that's
+    // all (plus wiring whatever input controls the user interacts with).
+    const PANEL_FIELD_MAP = [
+        { key: 'TARGET_START_DATE',            id: 'dvsa-start',         type: 'trimmedString' },
+        { key: 'TARGET_END_DATE',              id: 'dvsa-end',           type: 'trimmedString' },
+        { key: 'EXPECTED_CENTRE',              id: 'dvsa-centre',        type: 'trimmedString' },
+        { key: 'SEARCH_POSTCODE',              id: 'dvsa-postcode',      type: 'trimmedString' },
+        { key: 'REFRESH_MIN_MINS',             id: 'dvsa-refresh-min',   type: 'int' },
+        { key: 'REFRESH_MAX_MINS',             id: 'dvsa-refresh-max',   type: 'int' },
+        { key: 'EXCLUDE_WEEKENDS',             id: 'dvsa-weekends',      type: 'checkbox' },
+        { key: 'WALK_PREV_AVAIL',              id: 'dvsa-walk',          type: 'checkbox' },
+        { key: 'MAX_PREV_CLICKS',              id: 'dvsa-walk-max',      type: 'int' },
+        { key: 'TEST_MODE',                    id: 'dvsa-test',          type: 'checkbox', wizardForce: false },
+        { key: 'MANUAL_TRIGGER',               id: 'dvsa-manual',        type: 'checkbox', wizardForce: false },
+        { key: 'AUTO_BOOK',                    id: 'dvsa-autobook',      type: 'checkbox' },
+        { key: 'ALERT_ANY_CENTRE',             id: 'dvsa-alert-any',     type: 'checkbox', wizardForce: false },
+        { key: 'EARLIEST_TIME',                id: 'dvsa-earliest-time', type: 'trimmedString' },
+        { key: 'LATEST_TIME',                  id: 'dvsa-latest-time',   type: 'trimmedString' },
+        { key: 'LOGIN_LICENCE_NUMBER',         id: 'dvsa-licence',       type: 'upperTrimmedString', credential: true },
+        { key: 'LOGIN_BOOKING_REF',            id: 'dvsa-ref',           type: 'trimmedString',       credential: true },
+        { key: 'INSTRUCTOR_UNAVAILABLE_DATES', id: null,                 type: 'instructorDates' }
+    ];
+
+    // Read every field from the settings panel DOM and return a config object
+    // matching the PANEL_CONFIG_KEY schema. INSTRUCTOR_UNAVAILABLE_DATES comes
+    // from the panel's working-copy state (_panelInstructorDates is the source
+    // of truth while the panel is open; the pill UI mutates it directly).
+    function readPanelInputs(panel) {
+        const cfg = {};
+        PANEL_FIELD_MAP.forEach(f => {
+            if (f.type === 'instructorDates') {
+                cfg[f.key] = [..._panelInstructorDates];
+                return;
+            }
+            const el = panel.querySelector('#' + f.id);
+            if (!el) { cfg[f.key] = undefined; return; }
+            switch (f.type) {
+                case 'trimmedString':      cfg[f.key] = (el.value || '').trim(); break;
+                case 'upperTrimmedString': cfg[f.key] = (el.value || '').trim().toUpperCase(); break;
+                case 'int':                cfg[f.key] = parseInt(el.value, 10); break;
+                case 'checkbox':           cfg[f.key] = !!el.checked; break;
+                default:                   cfg[f.key] = el.value;
+            }
+        });
+        return cfg;
+    }
+
+    // Maps DOM-reading types to JSON-validator types (the simpler set the
+    // import validator expects). Derived from PANEL_FIELD_MAP so adding a
+    // field automatically extends the import allowlist.
+    const _FIELD_TYPE_TO_JSON_TYPE = {
+        trimmedString:      'string',
+        upperTrimmedString: 'string',
+        int:                'number',
+        checkbox:           'boolean',
+        instructorDates:    'array'
     };
+    const _ALLOWED_SETTING_KEYS = Object.fromEntries(
+        PANEL_FIELD_MAP.map(f => [f.key, _FIELD_TYPE_TO_JSON_TYPE[f.type] || 'string'])
+    );
 
     // Exports current panel state to a JSON file via a one-shot blob download.
     // `includeCredentials=false` blanks out the licence number + booking ref so
     // a shared config doesn't leak credentials.
     function exportPanelConfig(panel, includeCredentials) {
-        const $ = (id) => panel.querySelector(`#${id}`);
-        const val = (id) => $(id) ? $(id).value : '';
-        const num = (id) => parseInt(val(id), 10);
-        const chk = (id) => $(id) ? !!$(id).checked : false;
-
-        const settings = {
-            TARGET_START_DATE:            val('dvsa-start').trim(),
-            TARGET_END_DATE:              val('dvsa-end').trim(),
-            EXPECTED_CENTRE:              val('dvsa-centre').trim(),
-            SEARCH_POSTCODE:              val('dvsa-postcode').trim(),
-            REFRESH_MIN_MINS:             num('dvsa-refresh-min'),
-            REFRESH_MAX_MINS:             num('dvsa-refresh-max'),
-            EXCLUDE_WEEKENDS:             chk('dvsa-weekends'),
-            WALK_PREV_AVAIL:              chk('dvsa-walk'),
-            MAX_PREV_CLICKS:              num('dvsa-walk-max'),
-            TEST_MODE:                    chk('dvsa-test'),
-            MANUAL_TRIGGER:               chk('dvsa-manual'),
-            AUTO_BOOK:                    chk('dvsa-autobook'),
-            ALERT_ANY_CENTRE:             chk('dvsa-alert-any'),
-            EARLIEST_TIME:                val('dvsa-earliest-time').trim(),
-            LATEST_TIME:                  val('dvsa-latest-time').trim(),
-            LOGIN_LICENCE_NUMBER:         includeCredentials ? val('dvsa-licence').trim().toUpperCase() : '',
-            LOGIN_BOOKING_REF:            includeCredentials ? val('dvsa-ref').trim() : '',
-            INSTRUCTOR_UNAVAILABLE_DATES: [..._panelInstructorDates]
-        };
+        const settings = readPanelInputs(panel);
+        if (!includeCredentials) {
+            // Blank out credential fields (licence number, booking ref) so a
+            // shared export can't leak login details. Driven by the
+            // `credential: true` flag in PANEL_FIELD_MAP.
+            PANEL_FIELD_MAP.filter(f => f.credential).forEach(f => {
+                settings[f.key] = '';
+            });
+        }
 
         const payload = {
             _meta: {
@@ -4690,40 +4713,7 @@
             return;
         }
 
-        const start    = panel.querySelector('#dvsa-start').value.trim();
-        const end      = panel.querySelector('#dvsa-end').value.trim();
-        const centre   = panel.querySelector('#dvsa-centre').value.trim();
-        const postcode = panel.querySelector('#dvsa-postcode').value.trim();
-        const refMin   = parseInt(panel.querySelector('#dvsa-refresh-min').value, 10);
-        const refMax   = parseInt(panel.querySelector('#dvsa-refresh-max').value, 10);
-        const walkMax  = parseInt(panel.querySelector('#dvsa-walk-max').value, 10);
-        const licence  = panel.querySelector('#dvsa-licence').value.trim().toUpperCase();
-        const ref      = panel.querySelector('#dvsa-ref').value.trim();
-        // Instructor dates: read from panel working-copy state (pill UI is the source of truth)
-        const instLines = [..._panelInstructorDates];
-        const earliestTime = panel.querySelector('#dvsa-earliest-time').value.trim();
-        const latestTime   = panel.querySelector('#dvsa-latest-time').value.trim();
-
-        const cfg = {
-            TARGET_START_DATE: start,
-            TARGET_END_DATE: end,
-            EXPECTED_CENTRE: centre,
-            SEARCH_POSTCODE: postcode,
-            REFRESH_MIN_MINS: refMin,
-            REFRESH_MAX_MINS: refMax,
-            EXCLUDE_WEEKENDS: panel.querySelector('#dvsa-weekends').checked,
-            WALK_PREV_AVAIL: panel.querySelector('#dvsa-walk').checked,
-            MAX_PREV_CLICKS: walkMax,
-            TEST_MODE: panel.querySelector('#dvsa-test').checked,
-            MANUAL_TRIGGER: panel.querySelector('#dvsa-manual').checked,
-            AUTO_BOOK: panel.querySelector('#dvsa-autobook').checked,
-            ALERT_ANY_CENTRE: panel.querySelector('#dvsa-alert-any').checked,
-            EARLIEST_TIME: earliestTime,
-            LATEST_TIME: latestTime,
-            LOGIN_LICENCE_NUMBER: licence,
-            LOGIN_BOOKING_REF: ref,
-            INSTRUCTOR_UNAVAILABLE_DATES: instLines
-        };
+        const cfg = readPanelInputs(panel);
 
         try {
             localStorage.setItem(PANEL_CONFIG_KEY, JSON.stringify(cfg));
