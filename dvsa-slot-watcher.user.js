@@ -766,11 +766,8 @@
         const bgColour = isBlock ? '#d4351c' : '#f47738';
 
         const banner = document.createElement('div');
-        banner.style.cssText = [
-            'position:fixed','top:0','left:0','right:0',`z-index:${Z_INDEX_OVERLAY}`,
-            `background:${bgColour}`,'color:#fff','font:bold 18px/1.3 system-ui,sans-serif',
-            'padding:14px 24px','text-align:center','box-shadow:0 4px 12px rgba(0,0,0,.4)'
-        ].join(';');
+        banner.className = 'dvsa-banner dvsa-banner-small';
+        banner.style.background = bgColour;
         banner.textContent = `${reason.toUpperCase()}: ${instruction}${detailSuffix}`;
         document.body.prepend(banner);
 
@@ -2272,6 +2269,57 @@
                 text-align: center;
             }
             .dvsa-p .dvsa-shortcut-sep { color: #b1b4b6; }
+
+            /* ---- Top-of-page alert banners ----
+               Used by intervention, match, test, confirm-ready, and nearby
+               alerts. Each banner site applies .dvsa-banner plus zero or more
+               modifier classes (-small, -dismissable, -low-z) and sets its own
+               background colour inline (the colour is the one piece that's
+               unique per banner). Close-button styling lives at the bottom. */
+            .dvsa-banner {
+                position: fixed; top: 0; left: 0; right: 0;
+                z-index: ${Z_INDEX_OVERLAY};
+                color: #fff;
+                font: bold 22px/1.3 system-ui, sans-serif;
+                padding: 18px 24px;
+                text-align: center;
+                box-shadow: 0 4px 12px rgba(0, 0, 0, .4);
+            }
+            .dvsa-banner.dvsa-banner-small {
+                font-size: 18px;
+                padding: 14px 24px;
+            }
+            .dvsa-banner.dvsa-banner-dismissable {
+                cursor: pointer;
+                user-select: none;
+                padding-right: 56px;
+            }
+            /* Nearby-centre alerts sit one z-stack below modal-tier banners so
+               a real match banner from a target centre always takes priority. */
+            .dvsa-banner.dvsa-banner-low-z {
+                z-index: ${Z_INDEX_CLUSTER};
+                box-shadow: 0 4px 12px rgba(0, 0, 0, .3);
+                transition: transform .2s ease;
+            }
+            .dvsa-banner-close {
+                position: absolute; top: 50%; right: 16px;
+                transform: translateY(-50%);
+                background: transparent;
+                border: 1px solid rgba(255, 255, 255, .5);
+                color: #fff;
+                width: 32px; height: 32px;
+                border-radius: 50%;
+                font: bold 20px/1 system-ui, sans-serif;
+                cursor: pointer;
+                padding: 0;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+            }
+            .dvsa-banner-close.dvsa-banner-close-small {
+                width: 28px; height: 28px;
+                font-size: 18px;
+            }
 
         `;
         (document.head || document.documentElement).appendChild(style);
@@ -5029,24 +5077,15 @@
         // Whole banner is clickable to dismiss; explicit × button for clarity.
         const banner = document.createElement('div');
         banner.id = 'dvsa-test-banner';
-        banner.style.cssText = [
-            'position:fixed','top:0','left:0','right:0',`z-index:${Z_INDEX_OVERLAY}`,
-            'background:#f47738','color:#fff','font:bold 22px/1.3 system-ui,sans-serif',
-            'padding:18px 56px 18px 24px','text-align:center',
-            'box-shadow:0 4px 12px rgba(0,0,0,.4)','cursor:pointer','user-select:none'
-        ].join(';');
-        banner.textContent = 'TEST ALERT,this is what a real match looks like. Click anywhere to dismiss.';
+        banner.className = 'dvsa-banner dvsa-banner-dismissable';
+        banner.style.background = '#f47738';
+        banner.textContent = 'TEST ALERT, this is what a real match looks like. Click anywhere to dismiss.';
 
         const closeBtn = document.createElement('button');
         closeBtn.type = 'button';
         closeBtn.title = 'Dismiss test alert';
         closeBtn.textContent = '×';
-        closeBtn.style.cssText = [
-            'position:absolute','top:50%','right:16px','transform:translateY(-50%)',
-            'background:transparent','border:1px solid rgba(255,255,255,.5)','color:#fff',
-            'width:32px','height:32px','border-radius:50%','font:bold 20px/1 system-ui,sans-serif',
-            'cursor:pointer','padding:0','display:flex','align-items:center','justify-content:center'
-        ].join(';');
+        closeBtn.className = 'dvsa-banner-close';
         banner.appendChild(closeBtn);
 
         banner.addEventListener('click', cancelTestAlert);
@@ -5113,11 +5152,8 @@
 
         // Big in-page banner with link to the date
         const banner = document.createElement('div');
-        banner.style.cssText = [
-            'position:fixed','top:0','left:0','right:0',`z-index:${Z_INDEX_OVERLAY}`,
-            'background:#00703c','color:#fff','font:bold 22px/1.3 system-ui,sans-serif',
-            'padding:18px 24px','text-align:center','box-shadow:0 4px 12px rgba(0,0,0,.4)'
-        ].join(';');
+        banner.className = 'dvsa-banner';
+        banner.style.background = '#00703c';
         banner.innerHTML = `EARLIER SLOT AVAILABLE: ${dates.join(', ')} &mdash; book it now`;
         document.body.prepend(banner);
 
@@ -5173,26 +5209,15 @@
         // Blue banner, distinct from target match (green) and ready-to-book (red).
         // Inserted below any existing banner so it doesn't displace a real match alert.
         const banner = document.createElement('div');
-        banner.className = 'dvsa-nearby-banner';
-        banner.style.cssText = [
-            'position:fixed','top:0','left:0','right:0',`z-index:${Z_INDEX_CLUSTER}`,
-            'background:#1d70b8','color:#fff','font:bold 18px/1.3 system-ui,sans-serif',
-            'padding:14px 56px 14px 24px','text-align:center',
-            'box-shadow:0 4px 12px rgba(0,0,0,.3)','cursor:pointer','user-select:none',
-            'transition:transform .2s ease'
-        ].join(';');
+        banner.className = 'dvsa-banner dvsa-banner-small dvsa-banner-dismissable dvsa-banner-low-z dvsa-nearby-banner';
+        banner.style.background = '#1d70b8';
         banner.textContent = `NEARBY: ${centreName} has availability around ${date}. (Informational, not your target centre.)`;
 
         const closeBtn = document.createElement('button');
         closeBtn.type = 'button';
         closeBtn.title = 'Dismiss nearby alert';
         closeBtn.textContent = '×';
-        closeBtn.style.cssText = [
-            'position:absolute','top:50%','right:16px','transform:translateY(-50%)',
-            'background:transparent','border:1px solid rgba(255,255,255,.5)','color:#fff',
-            'width:28px','height:28px','border-radius:50%','font:bold 18px/1 system-ui,sans-serif',
-            'cursor:pointer','padding:0','display:flex','align-items:center','justify-content:center'
-        ].join(';');
+        closeBtn.className = 'dvsa-banner-close dvsa-banner-close-small';
         banner.appendChild(closeBtn);
         banner.addEventListener('click', () => banner.remove());
         document.body.prepend(banner);
@@ -5266,11 +5291,8 @@
 
         // Big red banner anchored at top
         const banner = document.createElement('div');
-        banner.style.cssText = [
-            'position:fixed','top:0','left:0','right:0',`z-index:${Z_INDEX_OVERLAY}`,
-            'background:#d4351c','color:#fff','font:bold 22px/1.3 system-ui,sans-serif',
-            'padding:18px 24px','text-align:center','box-shadow:0 4px 12px rgba(0,0,0,.4)'
-        ].join(';');
+        banner.className = 'dvsa-banner';
+        banner.style.background = '#d4351c';
         banner.innerHTML = `READY TO BOOK: <strong>${escapeAttr(data.date)} ${escapeAttr(data.timeLabel || '')}</strong> &mdash; review the page and click <strong>Confirm changes</strong> within 15 minutes. If not the right slot, click <strong>Abandon this change</strong> then pause the script (⏸).`;
         document.body.prepend(banner);
 
