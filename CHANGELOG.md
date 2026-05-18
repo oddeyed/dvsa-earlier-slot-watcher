@@ -6,6 +6,50 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and thi
 
 ---
 
+## [1.1.0], 2026-05-18
+
+A pre-1.1.0 code-quality pass. Seven refactors landed on `main` since v1.0.8, all behaviour-preserving. The script is now substantially easier to extend, with single-source-of-truth helpers for the patterns that had organically duplicated over many iterations.
+
+### Fixed
+
+- **Self-test diagnostic was reading the wizard-completed flag via a bare hardcoded string** (`'dvsaWatcher.wizardCompleted'`) instead of the `WIZARD_COMPLETED_KEY` constant. If the constant ever changed, the diagnostic would silently desync and always report "not yet completed". Replaced the string with the constant.
+
+### Changed
+
+- **One canonical map for panel config fields.** `handlePanelSave`, `exportPanelConfig`, and `finishWizard` previously each listed the same 18 config fields, in three different forms. Plus the import-validator allowlist (`_ALLOWED_SETTING_KEYS`) listed them a fourth time. All consolidated into a single `PANEL_FIELD_MAP` array (key, DOM id, coercion type, plus optional `credential:true` and `wizardForce:<value>` flags). New `readPanelInputs(panel)` reads from the DOM by iterating the map; the import allowlist is derived from it. Adding a new config field is now one map entry instead of editing five separate places.
+
+- **Banner styles moved into CSS classes.** Five top-of-page alert banners (intervention, test alert, match, nearby, confirm-ready) each had near-identical inline `cssText` arrays differing only in colour and a couple of dimensions. Replaced with `.dvsa-banner` (+ modifiers: `-small`, `-dismissable`, `-low-z`) and `.dvsa-banner-close` (+ `-small`) classes. Each banner site is now ~3 lines (className + one inline `background` property) instead of ~8 lines of cssText. Restyling banners is now one CSS edit.
+
+- **Single `flashTitle()` helper instead of 4 copies.** Four alert paths had the same "let flip / let flips / FLIP_CAP / setInterval" title-flash pattern. New `flashTitle(titleA, titleB, opts)` consolidates them. Side benefit: every refactored site now uniformly checks `document.body.dataset.alertAcknowledged` for early exit, fixing the "match-alert and nearby-alert didn't check the flag" inconsistency the audit flagged.
+
+- **Single `createModalOverlay()` factory for the three primary modals.** Settings panel, history panel, and diagnostic modal each had ~25 lines of identical boilerplate (overlay backdrop, panel cssText, Esc handler, click-outside handler, close cleanup). Replaced with a factory that returns `{ overlay, panel, close }`. Three stale module-level Esc handler vars retired (`_panelEscHandler`, `_diagnosticEscHandler`, `_historyEscHandler`); Esc handlers are now local closures cleaned up automatically on modal close. Adding a 5th modal in future is now ~10 lines.
+
+- **Storage key naming unified to `dvsa-watcher-*` prefix.** Three keys used the older `dvsaWatcher.*` dot-style namespace while the other seven used the kebab-style prefix everything else in the file uses. Renamed the three values; added a one-time `migrateLegacyStorageKeys()` migration at the start of `main()` that reads each legacy key, writes to the new key (only if the new key is currently empty), then deletes the old. Idempotent — re-runs after migration are no-ops. Existing users silently migrate on first load.
+
+### Added
+
+- **`Z_INDEX_OVERLAY` and `Z_INDEX_CLUSTER` constants** replace 11 hardcoded uses of `2147483647` / `2147483646` across inline-style cssText arrays and the injected CSS. Stacking decisions (modals above cluster) are now stated once near the top of the file.
+
+- **`STATUS_STATE` enum** replaces 24 string-literal uses of `'init'` / `'scanning'` / `'manual'` / etc. across `setStatus` calls, case labels in `renderStatusPill`, and `STATUS.state ===` comparisons. The valid-states list lives in one place; the previously-stale comment is removed.
+
+### Polish
+
+- **Optional chaining sweep**: 8 occurrences of `(panel.querySelector('#X') || {}).value` pattern replaced with `panel.querySelector('#X')?.value`. Universally safe in evergreen browsers.
+
+- **`catch` handler consistency**: six `catch(_)` sites changed to `catch(e)` to match the majority style elsewhere.
+
+- **`CYCLES_DEFAULT()` helper** replaces two copies of the same default JSON-string literal in `recordCycle` / `getCycles`.
+
+- **`escapeAttr` documented** as expecting raw text, never pre-encoded HTML (to prevent future double-encoding bugs).
+
+### Internal metrics
+
+The audit baseline was 5657 lines. After the cleanup the file is 5779 lines (+122). The line increase reflects added documentation around the new helpers; actual logic was deduplicated. Call sites for banners, title-flashes, modals, and form mapping are dramatically simpler. Top-10 longest functions list now has fewer >100-line functions because the boilerplate they shared moved into helpers.
+
+[1.1.0]: https://github.com/alchemycharlie/dvsa-earlier-slot-watcher/releases/tag/v1.1.0
+
+---
+
 ## [1.0.8], 2026-05-18
 
 ### Changed
