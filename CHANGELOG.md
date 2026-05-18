@@ -6,6 +6,31 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and thi
 
 ---
 
+## [1.1.1], 2026-05-18
+
+### Changed
+
+- **Per-action click-through timing tightened further.** The v1.0.8 reduction halved individual delay values; this pass collapses unnecessary intermediate pauses where consecutive JS statements run synchronously anyway (no need to pause between filling a licence number and filling a booking ref when both happen instantly). Specifically:
+  - `handleLogin`: 3 pauses (0.28-0.55s) → 1 pause (0.05-0.1s)
+  - `handleTestDateChoice`: 2 pauses (0.25-0.5s) → 1 pause (0.08-0.15s)
+  - `handleTestCentreSearch`: 2 pauses (0.2-0.4s) → 1 pause (0.05-0.1s)
+  - `handleBookingDetails`: 1 pause kept, reduced 0.15-0.3s → 0.08-0.15s
+  - `walkBackwards` calendar AJAX wait: 250-500ms → 200-400ms
+
+  Typical Flow 2 cycle saves roughly 0.8-1.7s vs v1.1.0 on the click-through chain, with more savings on cycles that involve many calendar-walk clicks. The auto-book triplet was already at the floor and is unchanged.
+
+  This is likely the last meaningful per-action speedup. Going further would risk DVSA's per-field validators racing the submit click (form rejected because the change-handler microtask hasn't run yet) or the calendar AJAX read happening mid-render (months with dates appearing empty, walk skipping past them silently).
+
+### Docs
+
+- **README tidy.** Compact "Jump to:" TOC line added after the WARNING callout for one-click navigation to Install / Troubleshooting / FAQ / Privacy / Auto-book safety / Terms of use. Relocated the settings-panel screenshot from "What it does" (where it duplicated the hero image) to inside Install step 4. Trimmed "What it does" from 6 bullets to 4. Renamed the bottom legal section "Before you install" → "Terms of use" (fixed a naming-vs-position contradiction).
+
+- **Top badge row** now includes a Buy Me a Coffee badge alongside License, Version, Userscript, and Disclaimer.
+
+[1.1.1]: https://github.com/alchemycharlie/dvsa-earlier-slot-watcher/releases/tag/v1.1.1
+
+---
+
 ## [1.1.0], 2026-05-18
 
 A pre-1.1.0 code-quality pass. Seven refactors landed on `main` since v1.0.8, all behaviour-preserving. The script is now substantially easier to extend, with single-source-of-truth helpers for the patterns that had organically duplicated over many iterations.
