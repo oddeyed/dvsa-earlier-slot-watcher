@@ -899,26 +899,26 @@
         // Skip if the form is already filled (e.g. the user typed before the script ran)
         if (licenceInput.value && refInput.value) {
             log('Login form already has values. Not overwriting. Submitting as-is.');
-            await humanPause(0.15, 0.3);
+            await humanPause(0.08, 0.15);
             submitBtn.click();
             return;
         }
 
         log('Auto-filling driving licence number.');
-        await humanPause(0.2, 0.4);
+        await humanPause(0.1, 0.2);
         licenceInput.focus();
         licenceInput.value = LOGIN_LICENCE_NUMBER;
         licenceInput.dispatchEvent(new Event('input',  { bubbles: true }));
         licenceInput.dispatchEvent(new Event('change', { bubbles: true }));
 
-        await humanPause(0.15, 0.3);
+        await humanPause(0.08, 0.15);
         log('Auto-filling booking reference.');
         refInput.focus();
         refInput.value = LOGIN_BOOKING_REF;
         refInput.dispatchEvent(new Event('input',  { bubbles: true }));
         refInput.dispatchEvent(new Event('change', { bubbles: true }));
 
-        await humanPause(0.2, 0.4);
+        await humanPause(0.1, 0.2);
         log('Submitting login form.');
         submitBtn.click();
     }
@@ -954,7 +954,7 @@
             return;
         }
         log('On Booking details page. Will click "Change" for test centre (Flow 2: multi-centre search).');
-        await humanPause(0.3, 0.6);
+        await humanPause(0.15, 0.3);
         const btn = requireSelector('#test-centre-change', 'Change test centre link on booking summary');
         if (!btn) return;
         log('Clicking #test-centre-change.');
@@ -963,14 +963,14 @@
 
     async function handleTestDateChoice() {
         log('On Test date choice page. Will select "Show earliest available date" and submit.');
-        await humanPause(0.3, 0.6);
+        await humanPause(0.15, 0.3);
         const radio = requireSelector('#test-choice-earliest', '"Show earliest available date" radio');
         if (!radio) return;
         radio.checked = true;
         radio.dispatchEvent(new Event('change', { bubbles: true }));
         log('Selected #test-choice-earliest radio.');
 
-        await humanPause(0.2, 0.4);
+        await humanPause(0.1, 0.2);
         const submitBtn = requireSelector('#driving-licence-submit', 'submit button on test date choice page');
         if (!submitBtn) return;
         log('Clicking submit.');
@@ -1088,11 +1088,11 @@
 
         // Otherwise, fill the postcode and submit a fresh search
         log(`Filling postcode "${SEARCH_POSTCODE}" and submitting test centre search.`);
-        await humanPause(0.2, 0.4);
+        await humanPause(0.1, 0.2);
         input.value = SEARCH_POSTCODE;
         input.dispatchEvent(new Event('input',  { bubbles: true }));
         input.dispatchEvent(new Event('change', { bubbles: true }));
-        await humanPause(0.2, 0.4);
+        await humanPause(0.1, 0.2);
         log('Clicking #test-centres-submit.');
         submitBtn.click();
         // Page reload will re-invoke this handler; the fast-path branch will then parse results.
@@ -5432,7 +5432,7 @@
                 break;
             }
             // Wait for the calendar to update (AJAX render after clicking "Previous available")
-            await new Promise(r => setTimeout(r, 400 + Math.random() * 300));
+            await new Promise(r => setTimeout(r, 250 + Math.random() * 250));
             // If the click produced the warning, we are done walking
             if (isNoEarlierWarningVisible()) {
                 log('Hit "no earlier tests" warning. End of earlier dates.');
