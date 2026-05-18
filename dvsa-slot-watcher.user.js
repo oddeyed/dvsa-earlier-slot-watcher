@@ -3910,7 +3910,7 @@
             line('ok', 'Cycles', `${cycles.count} scan(s)${cycles.last ? `, last ${formatRelativeAgo(Date.now() - new Date(cycles.last).getTime())}` : ''}`);
             const discovered = getDiscoveredCentres();
             line('ok', 'Discovered centres', `${discovered.length} (in addition to ${KNOWN_TEST_CENTRES.length} bundled)`);
-            const wizardDone = localStorage.getItem('dvsaWatcher.wizardCompleted');
+            const wizardDone = localStorage.getItem(WIZARD_COMPLETED_KEY);
             line('ok', 'Setup wizard', wizardDone ? `completed ${wizardDone}` : 'not yet completed (or skipped)');
         } catch (e) {
             line('fail', 'localStorage', `unavailable: ${e.message}`);
