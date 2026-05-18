@@ -208,6 +208,16 @@ The script does not interfere with the queue, attempt to skip it, or refresh fas
   <img src="docs/screenshots/queue-it-tab.png" alt="The browser tab title showing the live DVSA queue position, e.g. '[23,731 ahead] Queue-it'" width="380">
 </p>
 
+### DVSA service unavailable (overnight maintenance)
+
+DVSA takes the booking service down most nights for maintenance (typically late evening through to around 06:00). When the script lands on the "Service unavailable" page, it schedules itself to wake up at 06:05 the following morning and resume scanning automatically. Until then, the status pill shows the wake-up time and the browser tab title is prefixed with `[Wake HH:MM]` so you can leave the tab in the background and forget about it. The script logs an hourly heartbeat to the browser console so you can confirm it's still alive if you check in.
+
+When the service comes back online the script returns to its normal cycle automatically — no manual restart required.
+
+<p align="center">
+  <img src="docs/screenshots/service-down-aware.png" alt="The DVSA 'Service unavailable' page during overnight maintenance, with the script's status pill displaying the scheduled wake time" width="720">
+</p>
+
 ### "Layout broken" intervention
 
 DVSA changed page structure. The script bails rather than clicking the wrong thing.
