@@ -1375,6 +1375,16 @@
                     ? `in DVSA queue · ${n.toLocaleString('en-GB')} ahead`
                     : 'in DVSA queue';
                 bg = '#1d70b8';
+                // Surface the queue position in the tab title too, so the user can
+                // see their position without switching to this tab. Static prefix
+                // (no flashing) since the queue is informational, not a call to
+                // action. Falls back to the base Queue-it title if the position
+                // is unknown or has hit zero.
+                const queueTitleBase = 'Queue-it';
+                const desiredTitle = (Number.isFinite(n) && n > 0)
+                    ? `[${n.toLocaleString('en-GB')} ahead] ${queueTitleBase}`
+                    : queueTitleBase;
+                if (document.title !== desiredTitle) document.title = desiredTitle;
                 break;
             }
             case 'invalid':
