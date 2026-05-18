@@ -87,6 +87,15 @@
     const LOG_PREFIX = '[DVSA Earlier Slot Watcher]';
     const log = (...args) => console.log(LOG_PREFIX, ...args);
 
+    // ---- z-index layering ----
+    // Centralised so the stacking order is intentional: modal overlays sit
+    // above intervention banners and alert banners, which sit above the
+    // floating cluster (so modals can cover the cluster when open).
+    // 2147483647 is the max 32-bit signed integer, which is the practical
+    // ceiling for z-index in every browser engine.
+    const Z_INDEX_OVERLAY = 2147483647;   // intervention banners, alert banners, modal overlays
+    const Z_INDEX_CLUSTER = 2147483646;   // floating pill/gear cluster, nearby-alert banner
+
     // Page states identified by document.body.id on each page of the DVSA flow
     const PAGE_STATE = {
         LOGIN:              'page-login',               // session-expired re-auth page
@@ -109,11 +118,11 @@
     const AUTO_BOOK_ACK_KEY = 'dvsaWatcher.autoBookAcknowledged';
     function getAutoBookAck() {
         try { return localStorage.getItem(AUTO_BOOK_ACK_KEY) || ''; }
-        catch (_) { return ''; }
+        catch (e) { return ''; }
     }
     function setAutoBookAck() {
         try { localStorage.setItem(AUTO_BOOK_ACK_KEY, new Date().toISOString()); }
-        catch (_) { /* storage full or disabled, silently ignore */ }
+        catch (e) { /* storage full or disabled, silently ignore */ }
     }
 
     // Reasons why the user must intervene manually
@@ -143,10 +152,13 @@
     const STORAGE_KEY = 'dvsa-watcher-findings';
     const STORAGE_MAX = 1000;
     const CYCLES_KEY  = 'dvsa-watcher-cycles';
+    // Default shape for the cycles record. Used both as a fallback when the
+    // localStorage entry is missing/corrupt and as the seed for recordCycle().
+    const CYCLES_DEFAULT = () => ({ count: 0, first: null, last: null });
 
     function recordCycle() {
         try {
-            const data = JSON.parse(localStorage.getItem(CYCLES_KEY) || '{"count":0,"first":null,"last":null}');
+            const data = JSON.parse(localStorage.getItem(CYCLES_KEY) || JSON.stringify(CYCLES_DEFAULT()));
             data.count = (data.count || 0) + 1;
             if (!data.first) data.first = new Date().toISOString();
             data.last = new Date().toISOString();
@@ -158,9 +170,9 @@
 
     function getCycles() {
         try {
-            return JSON.parse(localStorage.getItem(CYCLES_KEY) || '{"count":0,"first":null,"last":null}');
+            return JSON.parse(localStorage.getItem(CYCLES_KEY) || JSON.stringify(CYCLES_DEFAULT()));
         } catch (e) {
-            return { count: 0, first: null, last: null };
+            return CYCLES_DEFAULT();
         }
     }
 
@@ -610,7 +622,7 @@
         setWatchingTitle(totalMins);
 
         const endTime = Date.now() + ms;
-        setStatus({ state: 'scanning', endTime });
+        setStatus({ state: STATUS_STATE.SCANNING, endTime });
 
         const countdownInterval = setInterval(() => {
             if (document.body.dataset.slotFound) {
@@ -648,7 +660,7 @@
         setWatchingTitle(totalMins);
 
         const endTime = Date.now() + ms;
-        setStatus({ state: 'scanning', endTime });
+        setStatus({ state: STATUS_STATE.SCANNING, endTime });
 
         // Heartbeat countdown logs every 60 seconds so you can see the script is alive
         const countdownInterval = setInterval(() => {
@@ -731,7 +743,7 @@
         const instruction = INTERVENTION_INSTRUCTIONS[reason] || 'Resolve to continue monitoring.';
         const detailSuffix = detail ? ` (${detail})` : '';
         log(`*** ACTION REQUIRED: ${reason}${detailSuffix} - ${instruction} ***`);
-        setStatus({ state: 'action', label: reason + detailSuffix });
+        setStatus({ state: STATUS_STATE.ACTION, label: reason + detailSuffix });
 
         // Title flash (less urgent cadence than slot-match alert).
         // Capped at ~10 minutes so it doesn't run forever after you resolve the intervention.
@@ -755,7 +767,7 @@
 
         const banner = document.createElement('div');
         banner.style.cssText = [
-            'position:fixed','top:0','left:0','right:0','z-index:2147483647',
+            'position:fixed','top:0','left:0','right:0',`z-index:${Z_INDEX_OVERLAY}`,
             `background:${bgColour}`,'color:#fff','font:bold 18px/1.3 system-ui,sans-serif',
             'padding:14px 24px','text-align:center','box-shadow:0 4px 12px rgba(0,0,0,.4)'
         ].join(';');
@@ -804,7 +816,7 @@
         const hours = ms / 3600000;
         const targetStr = target.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
         log(`DVSA scheduled downtime detected. Resuming at ${targetStr} (in ${hours.toFixed(1)} hours).`);
-        setStatus({ state: 'wake', endTime: target.getTime(), label: targetStr });
+        setStatus({ state: STATUS_STATE.WAKE, endTime: target.getTime(), label: targetStr });
 
         const base = document.title.replace(/^\[[^\]]+\]\s*/, '');
         document.title = `[Wake ${targetStr}] ${base}`;
@@ -852,7 +864,7 @@
 
     async function handleQueueItPage() {
         log('On DVSA Queue-it waiting room. Monitoring paused; Queue-it will redirect us to the booking flow when our turn comes up.');
-        setStatus({ state: 'queue' });
+        setStatus({ state: STATUS_STATE.QUEUE });
         // renderStatusPill reads the position live from the page each tick, so no
         // additional polling needed here. When Queue-it redirects us back to the
         // booking flow, the next page navigation re-runs main() and normal scanning
@@ -950,7 +962,7 @@
         // behaviour from that point onward.
         if (MANUAL_TRIGGER) {
             log('On Booking details page. MANUAL_TRIGGER mode: idle. Click either "Change" link (test centre or date/time) to start a search.');
-            setStatus({ state: 'manual' });
+            setStatus({ state: STATUS_STATE.MANUAL });
             return;
         }
         log('On Booking details page. Will click "Change" for test centre (Flow 2: multi-centre search).');
@@ -1079,7 +1091,7 @@
             // This stays on the test centre search page rather than navigating to /manage.
             if (MANUAL_TRIGGER) {
                 log('MANUAL_TRIGGER mode: parse complete, idle.');
-                setStatus({ state: 'manual' });
+                setStatus({ state: STATUS_STATE.MANUAL });
             } else {
                 scheduleTestCentreRecheck();
             }
@@ -1150,6 +1162,10 @@
         return true;
     }
 
+    // Escape a value for safe insertion into HTML attribute values or text
+    // nodes built via innerHTML/template literals. Expects RAW text; do not
+    // pass pre-encoded HTML through here or you'll double-encode (& becomes
+    // &amp; first, so any literal "&amp;" in input would become "&amp;amp;").
     function escapeAttr(s) {
         if (s == null) return '';
         return String(s).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
@@ -1277,7 +1293,7 @@
             if (!raw) return [];
             const arr = JSON.parse(raw);
             return Array.isArray(arr) ? arr.filter(s => typeof s === 'string' && s.trim()) : [];
-        } catch (_) {
+        } catch (e) {
             return [];
         }
     }
@@ -1294,7 +1310,7 @@
         list.push(clean);
         try {
             localStorage.setItem(DISCOVERED_CENTRES_KEY, JSON.stringify(list));
-        } catch (_) { /* storage full or disabled, silently ignore */ }
+        } catch (e) { /* storage full or disabled, silently ignore */ }
     }
 
     // Merged + sorted list for the combobox. Discovered centres are tagged so
@@ -1318,8 +1334,25 @@
     // doing right now: scanning + countdown to next refresh, awaiting your click
     // (manual mode), action needed, slot found, overnight wake, or "configure".
     // Re-renders every second; event functions push state via setStatus().
+    //
+    // STATUS_STATE is the single source of truth for valid pill states. Adding
+    // a new state means a new entry here, a new case in renderStatusPill, and
+    // (typically) one or more setStatus() call sites — and that's all.
+    const STATUS_STATE = Object.freeze({
+        INIT:     'init',
+        SCANNING: 'scanning',
+        MANUAL:   'manual',
+        ACTION:   'action',
+        MATCH:    'match',
+        WAKE:     'wake',
+        QUEUE:    'queue',
+        INVALID:  'invalid',
+        PAUSED:   'paused',
+        BOOKING:  'booking',
+        CONFIRM:  'confirm'
+    });
     const STATUS = {
-        state: 'init',   // 'init' | 'scanning' | 'manual' | 'action' | 'match' | 'wake' | 'invalid'
+        state: STATUS_STATE.INIT,
         endTime: null,   // unix ms for countdown states
         label: null      // free-text suffix for some states
     };
@@ -1335,10 +1368,10 @@
         const cycles = (getCycles().count || 0);
         let text = '', bg = '#505a5f';
         switch (STATUS.state) {
-            case 'init':
+            case STATUS_STATE.INIT:
                 text = '… initialising';
                 break;
-            case 'scanning':
+            case STATUS_STATE.SCANNING:
                 if (STATUS.endTime && STATUS.endTime > Date.now()) {
                     const ms = STATUS.endTime - Date.now();
                     const mins = Math.floor(ms / 60000);
@@ -1349,19 +1382,19 @@
                 }
                 bg = '#00703c';
                 break;
-            case 'manual':
+            case STATUS_STATE.MANUAL:
                 text = `⏸ awaiting your click · ${cycles} scans`;
                 bg = '#1d70b8';
                 break;
-            case 'action':
+            case STATUS_STATE.ACTION:
                 text = `⚠ ${STATUS.label || 'action needed'}`;
                 bg = '#d4351c';
                 break;
-            case 'match':
+            case STATUS_STATE.MATCH:
                 text = `✓ slot ${STATUS.label || 'found'}`;
                 bg = '#00703c';
                 break;
-            case 'wake':
+            case STATUS_STATE.WAKE:
                 if (STATUS.endTime && STATUS.endTime > Date.now()) {
                     const ms = STATUS.endTime - Date.now();
                     const hrs = Math.floor(ms / 3600000);
@@ -1372,7 +1405,7 @@
                 }
                 bg = '#1d70b8';
                 break;
-            case 'queue': {
+            case STATUS_STATE.QUEUE: {
                 // Read the live queue position from Queue-it's own DOM. Queue-it
                 // updates this value every 40s via its own polling loop; this
                 // renderer runs every 1s and just picks up the latest.
@@ -1395,19 +1428,19 @@
                 if (document.title !== desiredTitle) document.title = desiredTitle;
                 break;
             }
-            case 'invalid':
+            case STATUS_STATE.INVALID:
                 text = '⚙ configure to start';
                 bg = '#f47738';
                 break;
-            case 'paused':
+            case STATUS_STATE.PAUSED:
                 text = `⏸ paused · ${cycles} scans`;
                 bg = '#505a5f';
                 break;
-            case 'booking':
+            case STATUS_STATE.BOOKING:
                 text = `auto-booking${STATUS.label ? ` ${STATUS.label}` : '…'}`;
                 bg = '#f47738';
                 break;
-            case 'confirm':
+            case STATUS_STATE.CONFIRM:
                 if (STATUS.endTime && STATUS.endTime > Date.now()) {
                     const ms = STATUS.endTime - Date.now();
                     const mins = Math.floor(ms / 60000);
@@ -1428,11 +1461,11 @@
         // Colour + label adapt to the page context.
         const showMeBtn = document.getElementById('dvsa-watcher-show-me');
         if (showMeBtn) {
-            if (STATUS.state === 'match') {
+            if (STATUS.state === STATUS_STATE.MATCH) {
                 showMeBtn.style.display = 'block';
                 showMeBtn.style.background = '#00703c';
                 showMeBtn.textContent = 'Jump to slot';
-            } else if (STATUS.state === 'confirm') {
+            } else if (STATUS.state === STATUS_STATE.CONFIRM) {
                 showMeBtn.style.display = 'block';
                 showMeBtn.style.background = '#d4351c';
                 showMeBtn.textContent = 'Jump to Confirm';
@@ -1912,7 +1945,7 @@
 
             /* ---- Auto-book consent modal ---- */
             .dvsa-consent-overlay {
-                position: fixed; inset: 0; z-index: 2147483647;
+                position: fixed; inset: 0; z-index: ${Z_INDEX_OVERLAY};
                 background: rgba(0,0,0,.6);
                 display: flex; align-items: center; justify-content: center;
                 font: 14px/1.4 system-ui,sans-serif;
@@ -1971,7 +2004,7 @@
 
             /* ---- First-run setup wizard ---- */
             .dvsa-wiz-overlay {
-                position: fixed; inset: 0; z-index: 2147483647;
+                position: fixed; inset: 0; z-index: ${Z_INDEX_OVERLAY};
                 background: rgba(0,0,0,.55);
                 display: flex; align-items: center; justify-content: center;
                 font: 14px/1.4 system-ui,sans-serif;
@@ -2259,7 +2292,7 @@
     // Click handler for the "Show me" pill, jumps to the relevant element
     // based on the current status state.
     function showMeAction() {
-        if (STATUS.state === 'match') {
+        if (STATUS.state === STATUS_STATE.MATCH) {
             // Match label is dates.join(', '),first comma-separated entry is dates[0]
             const firstDate = (STATUS.label || '').split(',')[0].trim();
             if (!firstDate) return;
@@ -2270,7 +2303,7 @@
             }
             // Pulse the parent TD so the highlight covers the whole date cell
             pulseElement(link.closest('td') || link);
-        } else if (STATUS.state === 'confirm') {
+        } else if (STATUS.state === STATUS_STATE.CONFIRM) {
             const btn = document.querySelector('#confirm-changes');
             if (!btn) {
                 log('Show me: #confirm-changes not on this page.');
@@ -2287,7 +2320,7 @@
         const cluster = document.createElement('div');
         cluster.id = 'dvsa-watcher-cluster';
         cluster.style.cssText = [
-            'position:fixed','bottom:16px','right:16px','z-index:2147483646',
+            'position:fixed','bottom:16px','right:16px',`z-index:${Z_INDEX_CLUSTER}`,
             'display:flex','align-items:center','gap:8px',
             'font-family:system-ui,sans-serif','margin:0','padding:0'
         ].join(';');
@@ -2840,9 +2873,9 @@
     }
 
     function renderWizardPreview(panel) {
-        const start = (panel.querySelector('#dvsa-wiz-start') || {}).value || '';
-        const end   = (panel.querySelector('#dvsa-wiz-end')   || {}).value || '';
-        const excludeWeekends = (panel.querySelector('#dvsa-wiz-weekends') || {}).checked;
+        const start = panel.querySelector('#dvsa-wiz-start')?.value || '';
+        const end   = panel.querySelector('#dvsa-wiz-end')?.value || '';
+        const excludeWeekends = panel.querySelector('#dvsa-wiz-weekends')?.checked;
         const stats = computeMonitoringPreview({
             start, end, excludeWeekends,
             instructorDates: _wizardState.config.INSTRUCTOR_UNAVAILABLE_DATES
@@ -3020,7 +3053,7 @@
         const overlay = document.createElement('div');
         overlay.id = 'dvsa-watcher-panel';
         overlay.style.cssText = [
-            'position:fixed','inset:0','z-index:2147483647',
+            'position:fixed','inset:0',`z-index:${Z_INDEX_OVERLAY}`,
             'background:rgba(0,0,0,.55)','display:flex','align-items:center','justify-content:center',
             'font:14px/1.4 system-ui,sans-serif'
         ].join(';');
@@ -3542,8 +3575,8 @@
         const summary = panel.querySelector('#dvsa-instructor-summary');
         if (!container) return;
 
-        const startVal = (panel.querySelector('#dvsa-start') || {}).value || '';
-        const endVal   = (panel.querySelector('#dvsa-end')   || {}).value || '';
+        const startVal = panel.querySelector('#dvsa-start')?.value || '';
+        const endVal   = panel.querySelector('#dvsa-end')?.value || '';
         const total = _panelInstructorDates.length;
         const inWindowCount = _panelInstructorDates.filter(d =>
             (!startVal || d >= startVal) && (!endVal || d <= endVal)
@@ -3621,9 +3654,9 @@
     function renderMonitoringPreview(panel) {
         const body = panel.querySelector('#dvsa-preview-body');
         if (!body) return;
-        const start = (panel.querySelector('#dvsa-start') || {}).value || '';
-        const end   = (panel.querySelector('#dvsa-end')   || {}).value || '';
-        const excludeWeekends = (panel.querySelector('#dvsa-weekends') || {}).checked;
+        const start = panel.querySelector('#dvsa-start')?.value || '';
+        const end   = panel.querySelector('#dvsa-end')?.value || '';
+        const excludeWeekends = panel.querySelector('#dvsa-weekends')?.checked;
 
         const stats = computeMonitoringPreview({
             start, end, excludeWeekends,
@@ -3902,7 +3935,7 @@
             const stored = localStorage.getItem(PANEL_CONFIG_KEY);
             const findingsLen = (() => {
                 try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]').length; }
-                catch (_) { return 0; }
+                catch (e) { return 0; }
             })();
             const cycles = getCycles();
             line('ok', 'Panel config', stored ? 'present' : 'using code defaults');
@@ -3968,7 +4001,7 @@
         const overlay = document.createElement('div');
         overlay.id = 'dvsa-diagnostic-modal';
         overlay.style.cssText = [
-            'position:fixed','inset:0','z-index:2147483647',
+            'position:fixed','inset:0',`z-index:${Z_INDEX_OVERLAY}`,
             'background:rgba(0,0,0,.55)','display:flex','align-items:center','justify-content:center',
             'font:14px/1.4 system-ui,sans-serif'
         ].join(';');
@@ -4268,7 +4301,7 @@
     function applyImportedConfig(settings) {
         let current = {};
         try { current = JSON.parse(localStorage.getItem(PANEL_CONFIG_KEY) || '{}'); }
-        catch (_) { current = {}; }
+        catch (e) { current = {}; }
         const merged = { ...current, ...settings };
         try {
             localStorage.setItem(PANEL_CONFIG_KEY, JSON.stringify(merged));
@@ -4648,7 +4681,7 @@
         const overlay = document.createElement('div');
         overlay.id = 'dvsa-history-panel';
         overlay.style.cssText = [
-            'position:fixed','inset:0','z-index:2147483647',
+            'position:fixed','inset:0',`z-index:${Z_INDEX_OVERLAY}`,
             'background:rgba(0,0,0,.55)','display:flex','align-items:center','justify-content:center',
             'font:14px/1.4 system-ui,sans-serif'
         ].join(';');
@@ -4997,7 +5030,7 @@
         const banner = document.createElement('div');
         banner.id = 'dvsa-test-banner';
         banner.style.cssText = [
-            'position:fixed','top:0','left:0','right:0','z-index:2147483647',
+            'position:fixed','top:0','left:0','right:0',`z-index:${Z_INDEX_OVERLAY}`,
             'background:#f47738','color:#fff','font:bold 22px/1.3 system-ui,sans-serif',
             'padding:18px 56px 18px 24px','text-align:center',
             'box-shadow:0 4px 12px rgba(0,0,0,.4)','cursor:pointer','user-select:none'
@@ -5060,7 +5093,7 @@
         document.body.dataset.slotFound = '1';
         log('MATCH FOUND:', dates);
         recordFinding('match', dates);
-        setStatus({ state: 'match', label: dates.join(', ') });
+        setStatus({ state: STATUS_STATE.MATCH, label: dates.join(', ') });
 
         // Flashing title, capped so it doesn't run forever after you grab the slot.
         // ~5 minutes of flashing at 700ms is plenty to get your attention.
@@ -5081,7 +5114,7 @@
         // Big in-page banner with link to the date
         const banner = document.createElement('div');
         banner.style.cssText = [
-            'position:fixed','top:0','left:0','right:0','z-index:2147483647',
+            'position:fixed','top:0','left:0','right:0',`z-index:${Z_INDEX_OVERLAY}`,
             'background:#00703c','color:#fff','font:bold 22px/1.3 system-ui,sans-serif',
             'padding:18px 24px','text-align:center','box-shadow:0 4px 12px rgba(0,0,0,.4)'
         ].join(';');
@@ -5142,7 +5175,7 @@
         const banner = document.createElement('div');
         banner.className = 'dvsa-nearby-banner';
         banner.style.cssText = [
-            'position:fixed','top:0','left:0','right:0','z-index:2147483646',
+            'position:fixed','top:0','left:0','right:0',`z-index:${Z_INDEX_CLUSTER}`,
             'background:#1d70b8','color:#fff','font:bold 18px/1.3 system-ui,sans-serif',
             'padding:14px 56px 14px 24px','text-align:center',
             'box-shadow:0 4px 12px rgba(0,0,0,.3)','cursor:pointer','user-select:none',
@@ -5212,7 +5245,7 @@
         // 15-minute countdown anchored to when auto-book click happened
         const holdMs = 15 * 60 * 1000;
         const endTime = (data.clickTs || Date.now()) + holdMs;
-        setStatus({ state: 'confirm', endTime, label: data.timeLabel || '' });
+        setStatus({ state: STATUS_STATE.CONFIRM, endTime, label: data.timeLabel || '' });
 
         // Title flash with countdown. Cap at the hold expiry.
         let flip = true;
@@ -5234,7 +5267,7 @@
         // Big red banner anchored at top
         const banner = document.createElement('div');
         banner.style.cssText = [
-            'position:fixed','top:0','left:0','right:0','z-index:2147483647',
+            'position:fixed','top:0','left:0','right:0',`z-index:${Z_INDEX_OVERLAY}`,
             'background:#d4351c','color:#fff','font:bold 22px/1.3 system-ui,sans-serif',
             'padding:18px 24px','text-align:center','box-shadow:0 4px 12px rgba(0,0,0,.4)'
         ].join(';');
@@ -5317,7 +5350,7 @@
             return;
         }
 
-        setStatus({ state: 'booking', label: targetDate });
+        setStatus({ state: STATUS_STATE.BOOKING, label: targetDate });
         log(`Auto-book: target date ${targetDate}`);
 
         // 1. Click the date cell
@@ -5558,7 +5591,7 @@
 
         if (MANUAL_TRIGGER) {
             log('MANUAL_TRIGGER mode: scan complete, no auto-cycle scheduled.');
-            setStatus({ state: 'manual' });
+            setStatus({ state: STATUS_STATE.MANUAL });
             return;
         }
         scheduleNextCycle();
@@ -5594,7 +5627,7 @@
         // back to it.
         if (!isConfigValidForScanning()) {
             log('Configuration incomplete or invalid. Scanner paused, configure via the settings panel to start monitoring.');
-            setStatus({ state: 'invalid' });
+            setStatus({ state: STATUS_STATE.INVALID });
             if (shouldRunWizard()) {
                 openSetupWizard();
             } else {
@@ -5609,11 +5642,11 @@
         // to any handler. Settings, history, and test alert still work via the cluster.
         if (isPaused()) {
             log('Monitoring is paused. Click the play button (▶) in the bottom-right cluster to resume.');
-            setStatus({ state: 'paused' });
+            setStatus({ state: STATUS_STATE.PAUSED });
             return;
         }
 
-        setStatus({ state: 'scanning', endTime: null });
+        setStatus({ state: STATUS_STATE.SCANNING, endTime: null });
         const state = document.body.id || '';
         log(`Page state: ${state || '(unknown)'}`);
 
