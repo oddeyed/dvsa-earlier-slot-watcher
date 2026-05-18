@@ -6,6 +6,24 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and thi
 
 ---
 
+## [1.1.2], 2026-05-19
+
+### Changed
+
+- **Service-unavailable wake time now adapts to what DVSA actually says.** Previously the script always scheduled its wake at 06:05 regardless of what the "Service unavailable" page stated — brittle if DVSA shifts their downtime window. New behaviour: the script reads the stated return time from the page's `#unavailability-notice` element (e.g. *"It'll be back at 6 am"*), extracts the time, sanity-checks that it falls within a plausible service-restart window (04:00-12:00), and schedules wake at that time plus a 5-minute safety margin. If the element is missing, the text doesn't parse, or the parsed hour falls outside the sane range, the script falls back to the historical 06:05 heuristic. Worst case = unchanged from previous behaviour; best case = adaptive to whatever DVSA states.
+
+- **Service-unavailable detection promoted to a proper page-state entry.** Previously handled as a default-branch special case via title + heading-text matching. The DVSA page uses the same body-ID convention as every other page in the flow (`page-service-c`), so the script now routes through the standard page-state switch alongside login, booking-details, etc. The legacy title/heading fallbacks are kept as safety nets in case DVSA changes the body ID in a future site update.
+
+### Docs
+
+- **New README troubleshooting entry**: *"DVSA service unavailable"*, describing the script's behaviour during DVSA downtime windows. Includes screenshot.
+
+- **SECURITY.md and CONTRIBUTING.md reframed from active-support docs to no-obligation docs.** The previous wording contained explicit SLA-style commitments (e.g. "acknowledge within 7 days, assess within 14, fix within 30") and corporate-team framing ("we won't merge..."). The new wording explicitly states that the maintainer makes no commitment to ongoing maintenance, code review, response to issues, or merging of pull requests. The reporting channels still exist — what's gone is the implication that anything filed will necessarily be acted on. This is a hobby project shared in case it helps others, not a service. The technical content (setup instructions, coding conventions, PR checklist, what's in/out of scope, code of conduct) is unchanged.
+
+[1.1.2]: https://github.com/alchemycharlie/dvsa-earlier-slot-watcher/releases/tag/v1.1.2
+
+---
+
 ## [1.1.1], 2026-05-18
 
 ### Changed
