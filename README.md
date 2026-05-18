@@ -208,14 +208,16 @@ The script does not interfere with the queue, attempt to skip it, or refresh fas
   <img src="docs/screenshots/queue-it-tab.png" alt="The browser tab title showing the live DVSA queue position, e.g. '[23,731 ahead] Queue-it'" width="380">
 </p>
 
-### DVSA service unavailable (overnight maintenance)
+### DVSA service unavailable
 
-DVSA takes the booking service down most nights for maintenance (typically late evening through to around 06:00). When the script lands on the "Service unavailable" page, it schedules itself to wake up at 06:05 the following morning and resume scanning automatically. Until then, the status pill shows the wake-up time and the browser tab title is prefixed with `[Wake HH:MM]` so you can leave the tab in the background and forget about it. The script logs an hourly heartbeat to the browser console so you can confirm it's still alive if you check in.
+DVSA's booking service is sometimes taken offline and returns a "Service unavailable" page. The reason isn't always clear from the user side — it could be scheduled maintenance, capacity management, or something else — and DVSA doesn't publish a fixed schedule that I'm aware of. The page itself usually states when the service is expected to return.
 
-When the service comes back online the script returns to its normal cycle automatically — no manual restart required.
+When the script lands on this page, it schedules itself to resume scanning at 06:05 the following morning. **This is a heuristic based on observed patterns**, not a published DVSA timetable, so the actual return time can differ. Until the script resumes, the status pill shows the scheduled wake time and the browser tab title is prefixed with `[Wake HH:MM]` so you can leave the tab in the background. The script logs an hourly heartbeat to the browser console so you can confirm it's still alive.
+
+If the service is back before the scheduled wake time, manually reloading the DVSA tab will resume scanning earlier.
 
 <p align="center">
-  <img src="docs/screenshots/service-down-aware.png" alt="The DVSA 'Service unavailable' page during overnight maintenance, with the script's status pill displaying the scheduled wake time" width="720">
+  <img src="docs/screenshots/service-down-aware.png" alt="The DVSA 'Service unavailable' page, with the script's status pill displaying the scheduled wake time" width="720">
 </p>
 
 ### "Layout broken" intervention
