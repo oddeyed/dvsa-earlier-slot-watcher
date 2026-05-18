@@ -115,7 +115,7 @@
     // auto-book via the consent modal (or completes the wizard with auto-book
     // turned on, which counts as implicit ack). Surfaced in the self-test
     // diagnostic as an audit trail of when the user consented.
-    const AUTO_BOOK_ACK_KEY = 'dvsaWatcher.autoBookAcknowledged';
+    const AUTO_BOOK_ACK_KEY = 'dvsa-watcher-auto-book-ack';
     function getAutoBookAck() {
         try { return localStorage.getItem(AUTO_BOOK_ACK_KEY) || ''; }
         catch (e) { return ''; }
@@ -1314,7 +1314,7 @@
     // DVSA page (chosen-test-centre H1), it's stored locally and merged into the
     // combobox list. Even if the bundled KNOWN_TEST_CENTRES has the wrong name
     // for a user's centre, after one cycle the correct name appears in the dropdown.
-    const DISCOVERED_CENTRES_KEY = 'dvsaWatcher.discoveredCentres';
+    const DISCOVERED_CENTRES_KEY = 'dvsa-watcher-discovered-centres';
 
     function getDiscoveredCentres() {
         try {
@@ -2548,7 +2548,7 @@
     // The wizard's state is held in _wizardState; it commits to localStorage
     // only on the final Finish click, then reloads.
 
-    const WIZARD_COMPLETED_KEY = 'dvsaWatcher.wizardCompleted';
+    const WIZARD_COMPLETED_KEY = 'dvsa-watcher-wizard-completed';
     let _wizardState = null;
     let _wizardEscHandler = null;
 
@@ -5626,7 +5626,39 @@
         scheduleNextCycle();
     }
 
+    // One-time storage-key migration from the legacy dot-style names
+    // (dvsaWatcher.autoBookAcknowledged etc.) to the unified kebab-style
+    // prefix used by every other key (dvsa-watcher-auto-book-ack etc.).
+    // Reads the value from the old key, writes it to the new key (only if
+    // the new key is empty, to avoid clobbering a manually-set value), then
+    // deletes the old key. Idempotent: subsequent loads find the old keys
+    // absent and do nothing. Wrap each in try/catch so one storage error
+    // doesn't block the others.
+    function migrateLegacyStorageKeys() {
+        const migrations = [
+            { old: 'dvsaWatcher.autoBookAcknowledged', neu: AUTO_BOOK_ACK_KEY },
+            { old: 'dvsaWatcher.discoveredCentres',    neu: DISCOVERED_CENTRES_KEY },
+            { old: 'dvsaWatcher.wizardCompleted',      neu: WIZARD_COMPLETED_KEY }
+        ];
+        migrations.forEach(m => {
+            try {
+                const oldVal = localStorage.getItem(m.old);
+                if (oldVal == null) return;
+                if (localStorage.getItem(m.neu) == null) {
+                    localStorage.setItem(m.neu, oldVal);
+                    log(`Migrated storage key: ${m.old} → ${m.neu}`);
+                }
+                localStorage.removeItem(m.old);
+            } catch (e) {
+                log(`Migration failed for ${m.old}: ${e.message}`);
+            }
+        });
+    }
+
     async function main() {
+        // Runs first: brings legacy dvsaWatcher.* storage keys forward to the
+        // unified dvsa-watcher-* prefix. Idempotent, safe to call on every load.
+        migrateLegacyStorageKeys();
         logConfig();
         // Best-effort audio context prime. The 'once' click/keydown listeners are the
         // primary path, but if you've already interacted with DVSA in this tab before
