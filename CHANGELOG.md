@@ -6,6 +6,22 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and thi
 
 ---
 
+## [1.1.3], 2026-05-19
+
+### Fixed
+
+- **Auto-recovery from post-CAPTCHA Tomcat 403 redirects.** DVSA's redirect chain after a CAPTCHA solve occasionally lands on a URL like `/manage?execution=eXsY&_eventId=search` which returns an HTTP 403 from the underlying Tomcat (the Spring WebFlow state machine rejects the stale `_eventId`). Without recovery, the script would sit indefinitely on the 403 page — the user had to manually strip the broken query string and reload `/manage` to get the automated flow going again.
+
+  The script now detects this case (DVSA host + Tomcat 403 title + `_eventId` in URL) and automatically navigates to the canonical `https://driverpracticaltest.dvsa.gov.uk/manage` — exactly what a human would do manually. From there, the script's existing dispatch picks up normally (booking summary if session valid, login if not).
+
+  A session-storage loop guard prevents infinite recovery attempts: if the script lands on the 403, recovers, and lands on the 403 *again* in the same tab session, it surfaces a "layout broken" intervention instead of looping. The guard is cleared automatically whenever the script reaches any recognised page state, so a later 403 in the same session can still recover.
+
+  README troubleshooting section gains a new entry describing the brief 403 flash users may notice during the redirect.
+
+[1.1.3]: https://github.com/alchemycharlie/dvsa-earlier-slot-watcher/releases/tag/v1.1.3
+
+---
+
 ## [1.1.2], 2026-05-19
 
 ### Changed
