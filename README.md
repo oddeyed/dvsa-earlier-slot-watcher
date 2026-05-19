@@ -192,6 +192,14 @@ Full rationale for how the script behaves here: [docs/SECURITY-POSTURE.md](docs/
   <img src="docs/screenshots/captcha-detection.png" alt="The intervention banner when the script recognises a CAPTCHA challenge" width="720">
 </p>
 
+### Brief Tomcat 403 page after CAPTCHA
+
+After solving a CAPTCHA, DVSA's redirect chain occasionally lands on a URL like `/manage?execution=eXsY&_eventId=search` which returns an HTTP 403 "Forbidden" page (a default Tomcat error page, not a styled DVSA page). This is a known Spring WebFlow stale-event behaviour — the redirect URL carries an `_eventId` that the WebFlow state machine has already consumed or no longer accepts, and the server rejects it.
+
+The script detects this case and automatically navigates to the canonical `/manage` URL (no query parameters), which is what a human user would do manually. From there, monitoring resumes normally. You may see a brief 403 page flash before the redirect — that's expected, no action needed.
+
+If the auto-recovery somehow fails (e.g. the same 403 appears immediately after recovery), the script surfaces a "layout broken" intervention instead of looping.
+
 ### DVSA put you in a queue (Queue-it waiting room)
 
 DVSA uses Queue-it (a virtual waiting room) during peak load. The script recognises the queue page and shows your live position in two places: the floating status pill (e.g. "in DVSA queue · 23,731 ahead") and the browser tab title (e.g. `[23,731 ahead] Queue-it`). Both update every second as Queue-it refreshes the position. The tab title is handy when you've tabbed away — you can keep an eye on your position without switching to the queue tab.

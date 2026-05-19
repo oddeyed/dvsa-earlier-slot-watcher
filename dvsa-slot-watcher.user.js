@@ -111,6 +111,13 @@
     // Set by autoBookFlow before clicking Continue, read+consumed by handleConfirmBooking.
     const AUTO_BOOK_FLAG_KEY = 'dvsa-watcher-auto-book-flag';
 
+    // Session storage key for "we just attempted recovery from a post-CAPTCHA
+    // Tomcat 403 redirect". Used as a loop guard: if we land on the 403 page,
+    // navigate to /manage to recover, and then land on the 403 page AGAIN,
+    // give up and surface an intervention rather than loop forever. Cleared
+    // when we successfully reach any recognised PAGE_STATE.
+    const POST_CAPTCHA_RECOVERY_KEY = 'dvsa-watcher-post-captcha-recovery';
+
     // Persistent localStorage key for auto-book consent acknowledgement.
     // Set to an ISO timestamp the first time the user explicitly enables
     // auto-book via the consent modal (or completes the wizard with auto-book
@@ -826,6 +833,42 @@
             return null;
         }
         return el;
+    }
+
+    // Detect the Tomcat 403 page DVSA's redirect chain occasionally lands on
+    // after a CAPTCHA solve. Spring WebFlow sometimes builds the post-CAPTCHA
+    // redirect URL with an _eventId that the state machine has already
+    // consumed or doesn't accept at that point; the underlying Tomcat returns
+    // a 403 Forbidden as a result. A human user works around this by stripping
+    // the broken query string and reloading /manage; we automate the same
+    // recovery.
+    //
+    // Detection is deliberately tight: must be on the DVSA host, must have
+    // the distinctive Tomcat 403 title, and the URL must carry an _eventId
+    // parameter (other 403s — e.g. truly forbidden resources — wouldn't match
+    // this pattern and shouldn't trigger auto-recovery).
+    function isPostCaptchaForbiddenRedirect() {
+        if (window.location.hostname !== 'driverpracticaltest.dvsa.gov.uk') return false;
+        if (!/HTTP Status 403/i.test(document.title || '')) return false;
+        if (!/_eventId=/i.test(window.location.search || '')) return false;
+        return true;
+    }
+
+    // Navigate to the canonical /manage URL to recover from a post-CAPTCHA
+    // Tomcat 403. The session-storage flag is a loop guard: if recovery
+    // somehow lands us back on the 403 page, we don't loop forever — we
+    // surface an intervention instead. The flag is cleared in main() once
+    // we reach any recognised PAGE_STATE.
+    function recoverFromPostCaptchaRedirect() {
+        if (sessionStorage.getItem(POST_CAPTCHA_RECOVERY_KEY)) {
+            log('Post-CAPTCHA 403 recovery already attempted this session and we are still on the 403 page. Surfacing intervention rather than looping.');
+            sessionStorage.removeItem(POST_CAPTCHA_RECOVERY_KEY);
+            fireInterventionAlert(INTERVENTION_REASONS.LAYOUT_BROKEN, 'post-CAPTCHA 403 recovery failed');
+            return;
+        }
+        sessionStorage.setItem(POST_CAPTCHA_RECOVERY_KEY, new Date().toISOString());
+        log('Detected post-CAPTCHA 403 (DVSA redirect carried a stale _eventId). Navigating to /manage to recover.');
+        window.location.href = 'https://driverpracticaltest.dvsa.gov.uk/manage';
     }
 
     // Detect DVSA's "Service unavailable" page. The canonical signal is the
@@ -5813,6 +5856,14 @@
         const state = document.body.id || '';
         log(`Page state: ${state || '(unknown)'}`);
 
+        // If we've reached any recognised DVSA page state, clear the
+        // post-CAPTCHA-recovery loop-guard flag. This means a future stale-
+        // _eventId 403 later in the session can still trigger a recovery
+        // (rather than being treated as "already tried, give up").
+        if (state.startsWith('page-')) {
+            sessionStorage.removeItem(POST_CAPTCHA_RECOVERY_KEY);
+        }
+
         switch (state) {
             case PAGE_STATE.LOGIN:
                 await handleLogin();
@@ -5837,6 +5888,14 @@
                 scheduleWakeUp();
                 return;
             default:
+                // Post-CAPTCHA Tomcat 403 redirect: DVSA's redirect chain
+                // occasionally lands on a /manage URL with a stale _eventId
+                // that the WebFlow state machine rejects. We auto-recover by
+                // navigating to the canonical /manage URL.
+                if (isPostCaptchaForbiddenRedirect()) {
+                    recoverFromPostCaptchaRedirect();
+                    return;
+                }
                 // Safety net: if DVSA changes the body ID we still detect
                 // service-unavailable via title/heading text fallbacks.
                 if (isServiceUnavailable()) {
