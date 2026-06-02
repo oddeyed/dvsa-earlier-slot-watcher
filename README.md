@@ -238,6 +238,10 @@ When the script lands on this page, it recognises the state, surfaces a red inte
 
 The auto-pause persists across reloads. Unpause manually (click the floating play icon, or press `P`) only if your booking situation has changed — e.g. you called DVSA and got further changes granted, or you've cancelled and made a fresh booking.
 
+<p align="center">
+  <img src="docs/screenshots/change-limit-reached.png" alt="The DVSA booking summary when the change limit has been reached, with the script's red intervention banner explaining the state and pointing the user at DVSA's contact number" width="720">
+</p>
+
 ### "Layout broken" intervention
 
 DVSA changed page structure. The script bails rather than clicking the wrong thing.
