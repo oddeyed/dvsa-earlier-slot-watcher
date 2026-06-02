@@ -135,20 +135,22 @@
 
     // Reasons why the user must intervene manually
     const INTERVENTION_REASONS = {
-        CAPTCHA:         'captcha challenge',
-        TEMP_BLOCK:      'Error 15 temp block',
-        LOGIN:           'session expired',
-        CENTRE_MISMATCH: 'test centre mismatch',
-        LAYOUT_BROKEN:   'DVSA layout changed'
+        CAPTCHA:             'captcha challenge',
+        TEMP_BLOCK:          'Error 15 temp block',
+        LOGIN:               'session expired',
+        CENTRE_MISMATCH:     'test centre mismatch',
+        LAYOUT_BROKEN:       'DVSA layout changed',
+        MAX_CHANGES_REACHED: 'maximum test changes reached'
     };
 
     // What the user should actually do for each intervention type
     const INTERVENTION_INSTRUCTIONS = {
-        'captcha challenge':     'Solve the captcha to continue.',
-        'Error 15 temp block':   'Standard DVSA rate-limit response. Script paused. Wait for the block to clear naturally (typically 1-2 hours), then resume.',
-        'session expired':       'Re-enter your driving licence number and booking reference.',
-        'test centre mismatch':  'Calendar loaded a different test centre. Monitoring is paused. Verify your configured test centre and reload.',
-        'DVSA layout changed':   'A page element the script needs is missing. DVSA may have updated their site, check for a script update.'
+        'captcha challenge':             'Solve the captcha to continue.',
+        'Error 15 temp block':           'Standard DVSA rate-limit response. Script paused. Wait for the block to clear naturally (typically 1-2 hours), then resume.',
+        'session expired':               'Re-enter your driving licence number and booking reference.',
+        'test centre mismatch':          'Calendar loaded a different test centre. Monitoring is paused. Verify your configured test centre and reload.',
+        'DVSA layout changed':           'A page element the script needs is missing. DVSA may have updated their site, check for a script update.',
+        'maximum test changes reached':  'DVSA\'s change limit has been hit for this booking. Call DVSA on 0300 200 1122 to request further changes. Monitoring auto-paused; unpause only if your booking situation changes.'
     };
 
     // ---- Findings log (persisted to localStorage for verification & history) ----
@@ -802,7 +804,11 @@
         );
 
         // Different banner colour for temp block (red) vs other interventions (orange)
-        const isBlock = reason === INTERVENTION_REASONS.TEMP_BLOCK;
+        // Red banner for hard stops the user has to address externally (wait
+        // out the rate-limit, or call DVSA). Orange for transient states the
+        // user can resolve in-tab (solve a CAPTCHA, re-login, etc.).
+        const isBlock = reason === INTERVENTION_REASONS.TEMP_BLOCK ||
+                        reason === INTERVENTION_REASONS.MAX_CHANGES_REACHED;
         const bgColour = isBlock ? '#d4351c' : '#f47738';
 
         const banner = document.createElement('div');
@@ -1076,9 +1082,45 @@
         submitBtn.click();
     }
 
+    // Detect DVSA's "maximum test changes reached" terminal state. This appears
+    // on the standard page-ibs-summary booking summary but with the "Change
+    // test centre" / "Change date/time" buttons stripped and an explanatory
+    // message added. Detection requires BOTH:
+    //
+    //   (1) <header class="booking-change-incomplete"> — the marker DVSA puts
+    //       on the booking summary when the change limit has been hit
+    //   (2) DVSA's contact number 0300 200 1122 in the help-text panel — a
+    //       very specific tell, unlikely to appear on the page for any other
+    //       reason
+    //
+    // Both must match for a positive detection, keeping false-positive risk
+    // near zero.
+    function isMaxChangesReached() {
+        const header = document.querySelector('header.booking-change-incomplete');
+        if (!header) return false;
+        const helpEl = document.querySelector('.onscreen-help');
+        const helpText = ((helpEl && helpEl.textContent) || '').replace(/\s+/g, ' ');
+        return /0300\s*200\s*1122/.test(helpText);
+    }
+
     async function handleBookingDetails() {
         // Reaching this page means login succeeded - clear the auto-login retry counter
         sessionStorage.removeItem(LOGIN_ATTEMPTS_KEY);
+
+        // Terminal-state check: if this booking has hit DVSA's maximum number
+        // of allowed changes (typically 2), the page replaces both "Change"
+        // buttons with an explanatory message pointing the user at DVSA's
+        // contact number. There's no path forward for the script — every
+        // automated flow (Flow 1, Flow 2, auto-book) requires one of those
+        // buttons. Surface a clear intervention and auto-pause monitoring,
+        // since further reload cycles would just re-detect the same dead-end.
+        // The user can manually unpause if their booking situation changes.
+        if (isMaxChangesReached()) {
+            log('Booking has reached DVSA\'s maximum change limit. Auto-pausing monitoring; user must call DVSA on 0300 200 1122 to proceed.');
+            localStorage.setItem(PAUSED_KEY, '1');
+            fireInterventionAlert(INTERVENTION_REASONS.MAX_CHANGES_REACHED);
+            return;
+        }
 
         // The script supports two flows on /manage:
         //

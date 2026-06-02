@@ -230,6 +230,14 @@ If the service is back before the scheduled wake time, manually reloading the DV
   <img src="docs/screenshots/service-down-aware.png" alt="The DVSA 'Service unavailable' page, with the script's status pill displaying the scheduled wake time" width="720">
 </p>
 
+### Maximum test changes reached
+
+DVSA allows a limited number of changes per booking — typically two reschedules. After that, the booking summary page replaces the "Change test centre" and "Change date/time" buttons with a message: *"The number of allowed changes to your booking has now been exceeded. You'll need to call the DVSA on 0300 200 1122 if you want to make any further changes to your test date."*
+
+When the script lands on this page, it recognises the state, surfaces a red intervention banner explaining the situation, and **auto-pauses monitoring**. Since there's no flow forward — every automated path the script can take requires one of the "Change" buttons that DVSA has removed — continuing to scan would just be a slow loop with the same dead-end on every cycle.
+
+The auto-pause persists across reloads. Unpause manually (click the floating play icon, or press `P`) only if your booking situation has changed — e.g. you called DVSA and got further changes granted, or you've cancelled and made a fresh booking.
+
 ### "Layout broken" intervention
 
 DVSA changed page structure. The script bails rather than clicking the wrong thing.
