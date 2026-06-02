@@ -6,6 +6,24 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and thi
 
 ---
 
+## [1.1.4], 2026-05-19
+
+### Added
+
+- **"Maximum test changes reached" intervention.** When a booking has hit DVSA's limit on test changes (typically two reschedules), DVSA strips the "Change test centre" and "Change date/time" buttons from the booking summary and adds an explanatory message pointing the user at DVSA's contact number. The script now recognises this state explicitly.
+
+  Detection requires BOTH `<header class="booking-change-incomplete">` AND DVSA's contact number `0300 200 1122` in the on-screen help text. The combination keeps false-positive risk near zero.
+
+  When detected: the script logs the state, sets the paused flag in localStorage (so subsequent scheduled reloads exit early instead of looping on a page with no path forward), and surfaces a red intervention banner with clear instructions to call DVSA on `0300 200 1122` to request further changes. The auto-pause persists across reloads. Users manually unpause (floating play icon or `P`) if their booking situation changes — e.g. additional changes granted by phone, or a fresh booking made.
+
+  Previously this state would trigger a generic *"DVSA layout changed"* intervention because the script would try and fail to click the missing `#test-centre-change` button. Accurate that something was wrong, but misleading about what.
+
+- README troubleshooting section gains a corresponding entry describing the state and the auto-pause behaviour.
+
+[1.1.4]: https://github.com/alchemycharlie/dvsa-earlier-slot-watcher/releases/tag/v1.1.4
+
+---
+
 ## [1.1.3], 2026-05-19
 
 ### Fixed
