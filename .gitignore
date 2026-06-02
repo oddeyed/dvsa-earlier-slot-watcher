@@ -15,6 +15,40 @@
 *.private.user.js
 *.local.user.js
 
+# PII-risk scratch files at the repo root. Stray files at the top level
+# (page-source dumps for reference, RTF copies of DVSA pages, ad-hoc
+# screenshots being processed before they go into docs/screenshots/, etc.)
+# routinely contain a driving licence number, booking reference, full name,
+# or current test date. The /-prefix anchors to the repo root, so intentional
+# committed content under docs/, .github/, etc. is not affected. If you
+# legitimately need a file with one of these extensions at the root, you can
+# force-add it with `git add -f`, but that's an explicit override.
+/*.rtf
+/*.html
+/*.htm
+/*.txt
+/*.png
+/*.jpg
+/*.jpeg
+/*.gif
+/*.bmp
+/*.webp
+/*.pdf
+/*.docx
+/*.doc
+/*.xlsx
+/*.xls
+/*.csv
+
+# Additional pattern-based safety net for filenames that clearly contain
+# DVSA-page references regardless of where they live in the tree.
+*page source*
+*page-source*
+*licence number*
+*license number*
+*booking ref*
+*booking-ref*
+
 # Internal planning notes (kept locally — public users don't need to see our backlog)
 ROADMAP.md
 PLANNING.md
