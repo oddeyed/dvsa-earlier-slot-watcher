@@ -6,6 +6,26 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and thi
 
 ---
 
+## [1.1.5], 2026-06-17
+
+### Fixed
+
+- **Reduced test-centre-search layout (no postcode search box).** DVSA changed the navigation flow so the test-centre-search page (`page-test-centre-search`) can be served without the postcode search box (`#test-centres-input`), listing only a small number of nearby test centres as direct links instead. Previously the script hard-required the search input and, when it was missing, fired a *"DVSA layout changed"* intervention — leaving the user stuck.
+
+  The script now detects the missing search box and, rather than bailing, looks for the configured target centre among the listed links. If it finds it (matched case-insensitively on the centre name, the same way the availability-summary parser matches the target), it follows that link straight through to the centre's availability — the calendar handler takes over from there — without needing a search.
+
+  Link discovery tries the known result-item markup first (`.test-centre-results li` → `a.test-centre-details-link`), then progressively looser fallbacks (anchors with DVSA's `centre-name-*` id convention, then any link whose visible text names the centre), so a minor markup change doesn't defeat it.
+
+  Only if the target centre is genuinely absent from the listed centres — and there's no search box to find it with — does the script fall back to surfacing a layout intervention, now with a context label that names the reduced-layout cause.
+
+- **Stuck on the "alternative test centres" page.** DVSA shows a new page (`body.id="page-alternative-centres"`) after a scan that finds no bookable cancellation at the current centre — a dead-end that just suggests other centres to try. The script didn't recognise this body ID, so it fell through to the "not a recognised page state, idling" branch and the scan loop stopped.
+
+  The script now recognises `page-alternative-centres` and, after the normal paced recheck interval, navigates back to `/manage` to begin a fresh scan cycle, so monitoring continues uninterrupted. Pacing the delay (rather than navigating immediately) avoids a tight loop that could draw DVSA rate-limiting or a CAPTCHA. (In `MANUAL_TRIGGER` mode it idles instead, leaving navigation to the user.)
+
+[1.1.5]: https://github.com/alchemycharlie/dvsa-earlier-slot-watcher/releases/tag/v1.1.5
+
+---
+
 ## [1.1.4], 2026-05-19
 
 ### Added

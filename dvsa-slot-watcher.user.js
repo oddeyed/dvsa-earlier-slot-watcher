@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         DVSA Earlier Slot Watcher
 // @namespace    https://github.com/alchemycharlie/dvsa-earlier-slot-watcher
-// @version      1.1.4
+// @version      1.1.5
 // @description  For UK learner drivers with an existing DVSA practical driving test booking. Watches the "Change your test" calendar for an earlier cancellation slot at your chosen test centre, alerts you the moment one appears in your target date window, and can optionally auto-reschedule up to the final confirmation page. Does NOT book new tests, you must already have a booking.
 // @author       alchemycharlie
 // @homepageURL  https://github.com/alchemycharlie/dvsa-earlier-slot-watcher
@@ -23,7 +23,7 @@
     // Script version. Kept in sync with the @version line in the userscript
     // header at the top of this file. Surfaced in the About pane of the
     // settings panel and in the self-test diagnostic output for bug reports.
-    const SCRIPT_VERSION = '1.1.4';
+    const SCRIPT_VERSION = '1.1.5';
 
     // Tab-focus tracking. Browsers throttle setTimeout (and other timers) when
     // a tab is in the background, which can stretch the script's refresh
@@ -103,6 +103,7 @@
         TEST_DATE_CHOICE:   'page-test-preferences',    // "How do you want to search?" page
         CALENDAR:           'page-available-time',      // calendar with bookable dates
         TEST_CENTRE_SEARCH: 'page-test-centre-search', // multi-centre availability search
+        ALTERNATIVE_CENTRES:'page-alternative-centres', // post-search dead-end suggesting other centres
         CONFIRM_BOOKING:    'page-confirm-booking',     // final "Confirm changes" review page
         SERVICE_UNAVAILABLE:'page-service-c'            // "Service unavailable" downtime page
     };
@@ -1250,6 +1251,41 @@
         return summary;
     }
 
+    // Find a link to a named test centre anywhere on the current page, matching
+    // the same way parseTestCentreResults matches the target: case-insensitive
+    // substring on the centre's displayed name. Tries the known result-item
+    // markup first, then progressively looser fallbacks so a minor DVSA markup
+    // change doesn't defeat it. Returns the anchor element, or null if no link
+    // for the centre is present.
+    function findTestCentreLinkByName(centreName) {
+        const wanted = (centreName || '').trim().toLowerCase();
+        if (!wanted) return null;
+
+        // Strategy 1: availability-summary result items — <li> with an <h4>
+        // name and an <a.test-centre-details-link> (id "centre-name-<id>").
+        const items = document.querySelectorAll('.test-centre-results li');
+        for (const li of items) {
+            const nameEl = li.querySelector('h4');
+            if (!nameEl || !nameEl.textContent.trim().toLowerCase().includes(wanted)) continue;
+            const linkEl = li.querySelector('a.test-centre-details-link')
+                || li.querySelector('a[id^="centre-name-"]')
+                || li.querySelector('a[href]');
+            if (linkEl) return linkEl;
+        }
+
+        // Strategy 2: any anchor following DVSA's centre-name id convention.
+        for (const a of document.querySelectorAll('a[id^="centre-name-"]')) {
+            if ((a.textContent || '').trim().toLowerCase().includes(wanted)) return a;
+        }
+
+        // Strategy 3: last resort — any link whose visible text names the centre.
+        for (const a of document.querySelectorAll('a[href]')) {
+            if ((a.textContent || '').trim().toLowerCase().includes(wanted)) return a;
+        }
+
+        return null;
+    }
+
     async function handleTestCentreSearch() {
         // Bail early on the validation-error state (e.g. invalid postcode submitted)
         const errorSummary = document.querySelector('section.error-summary');
@@ -1257,8 +1293,16 @@
             log('Search returned validation error. Will resubmit with the configured postcode.');
         }
 
-        const input = requireSelector('#test-centres-input', 'postcode input on test centre search');
-        if (!input) return;
+        // The classic layout has a postcode search box. DVSA has been seen to
+        // serve a reduced layout that drops the search box and instead lists a
+        // small number of nearby test centres as direct links. Detect that case
+        // (input absent) and, rather than firing a layout-broken intervention,
+        // follow the target centre's link straight through if it's listed.
+        const input = document.querySelector('#test-centres-input');
+        if (!input) {
+            await handleSearchlessTestCentreList();
+            return;
+        }
         const submitBtn = requireSelector('#test-centres-submit', 'submit button on test centre search');
         if (!submitBtn) return;
 
@@ -1294,6 +1338,56 @@
         log('Clicking #test-centres-submit.');
         submitBtn.click();
         // Page reload will re-invoke this handler; the fast-path branch will then parse results.
+    }
+
+    // Reduced test-centre-search layout handler.
+    //
+    // DVSA sometimes serves the test-centre-search page without the postcode
+    // search box (#test-centres-input), listing only a short set of nearby
+    // centres as links. We can't run a search there, but if the configured
+    // target centre is among the listed links we can follow it straight into
+    // its availability — the calendar handler takes over from there. Only if
+    // the target centre isn't listed (and there's no search box to find it
+    // with) do we fall back to surfacing a layout intervention.
+    async function handleSearchlessTestCentreList() {
+        log('Test centre search box (#test-centres-input) is absent — DVSA is listing nearby centres directly (reduced layout). Looking for the target centre link.');
+
+        const link = findTestCentreLinkByName(EXPECTED_CENTRE);
+        if (link) {
+            log(`Target centre "${EXPECTED_CENTRE}" is listed on the page. Following its link instead of searching.`);
+            recordCycle();
+            await humanPause(0.08, 0.15);
+            link.click();
+            return;
+        }
+
+        // Target centre isn't in the short list and there's no search box to
+        // find it with — this needs the user. Surface the layout intervention
+        // with a context label that reflects the reduced layout.
+        log(`Target centre "${EXPECTED_CENTRE}" is not among the listed centres and there is no search box to find it. Surfacing intervention.`);
+        fireInterventionAlert(
+            INTERVENTION_REASONS.LAYOUT_BROKEN,
+            `#test-centres-input,postcode input absent and target centre "${EXPECTED_CENTRE}" not in the listed centres`
+        );
+    }
+
+    // DVSA shows the "alternative test centres" page (body id
+    // page-alternative-centres) after a successful scan that found no bookable
+    // cancellation at the current centre — a dead-end that merely suggests other
+    // centres worth trying. There's no path forward to keep scanning from here,
+    // so the script would otherwise idle on it forever. We treat it like any
+    // other no-match: pace the normal recheck interval, then navigate back to
+    // /manage to begin a fresh scan cycle (scheduleNextCycle → returnToStart).
+    // Pacing the delay here avoids a tight /manage → search → alternative-centres
+    // → /manage loop that could draw DVSA rate-limiting or a CAPTCHA.
+    function handleAlternativeCentres() {
+        if (MANUAL_TRIGGER) {
+            log('On DVSA "alternative test centres" page. MANUAL_TRIGGER mode: idle.');
+            setStatus({ state: STATUS_STATE.MANUAL });
+            return;
+        }
+        log('On DVSA "alternative test centres" page (no earlier slot at the current centre). Scheduling a return to /manage for the next scan.');
+        scheduleNextCycle();
     }
 
     // Audible alert + notification permission both require a user gesture per browser policy.
@@ -5921,6 +6015,9 @@
                 return;
             case PAGE_STATE.TEST_CENTRE_SEARCH:
                 await handleTestCentreSearch();
+                return;
+            case PAGE_STATE.ALTERNATIVE_CENTRES:
+                handleAlternativeCentres();
                 return;
             case PAGE_STATE.CONFIRM_BOOKING:
                 await handleConfirmBooking();
